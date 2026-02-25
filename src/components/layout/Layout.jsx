@@ -2,12 +2,12 @@ import React from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
 
-const Layout = ({ children, activePage, onNavigate, title, rightContent }) => {
+const Layout = ({ children, activePage, onNavigate, title, leftContent, rightContent }) => {
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar activePage={activePage} onNavigate={onNavigate} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header title={title} rightContent={rightContent} />
+        <Header title={title} leftContent={leftContent} rightContent={rightContent} />
         <main className="flex-1 overflow-auto">
           {children}
         </main>
