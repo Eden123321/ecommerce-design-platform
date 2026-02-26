@@ -28,6 +28,104 @@ const industries = [
   { id: 'home', label: '家居', icon: ShoppingCart, color: 'bg-green-500' },
 ];
 
+// 底模选项
+const baseModels = [
+  { id: 'sdxl', label: 'SDXL' },
+  { id: 'flux2-kein', label: 'Flux2-Kein' },
+  { id: 'qwen2509', label: 'Qwen2509' },
+  { id: 'qwen2511', label: 'Qwen2511' },
+];
+
+// 设计模板选项
+// type: text2image(文生图) | image2image(图生图) | smart(智能 - 根据是否有图片判断)
+const designTemplates = [
+  {
+    id: 'default',
+    label: '默认模板',
+    type: 'smart',
+    preset: {
+      baseModel: 'flux2-kein',
+      prompt: '',
+      industry: 'ecommerce',
+      style: 'modern',
+      ratio: '1:1',
+    }
+  },
+  {
+    id: 'promotion',
+    label: '促销模板',
+    type: 'text2image',
+    preset: {
+      baseModel: 'sdxl',
+      prompt: '电商促销海报，醒目促销文字，现代简约风格，高对比度，吸睛设计',
+      industry: 'ecommerce',
+      style: 'modern',
+      ratio: '16:9',
+    }
+  },
+  {
+    id: 'product',
+    label: '商品展示',
+    type: 'image2image',
+    preset: {
+      baseModel: 'flux2-kein',
+      prompt: '精致商品展示，专业摄影棚光效，简洁背景，突出产品细节',
+      industry: 'ecommerce',
+      style: 'flat',
+      ratio: '1:1',
+      referenceImage: null, // 模板预设的参考图，可为空
+    }
+  },
+  {
+    id: 'poster',
+    label: '海报模板',
+    type: 'image2image',
+    preset: {
+      baseModel: 'flux2-kein',
+      prompt: '创意海报设计，艺术感强，视觉冲击力强，层次分明',
+      industry: 'ecommerce',
+      style: 'modern',
+      ratio: '9:16',
+    }
+  },
+  {
+    id: 'banner',
+    label: 'Banner模板',
+    type: 'text2image',
+    preset: {
+      baseModel: 'sdxl',
+      prompt: '电商 Banner 广告，轮播图设计，促销氛围浓厚，色彩鲜艳',
+      industry: 'ecommerce',
+      style: 'playful',
+      ratio: '16:9',
+    }
+  },
+  {
+    id: 'social',
+    label: '社交媒体',
+    type: 'smart',
+    preset: {
+      baseModel: 'qwen2509',
+      prompt: '社交媒体配图，时尚潮流，适合小红书、微博等平台',
+      industry: 'fashion',
+      style: 'minimal',
+      ratio: '1:1',
+    }
+  },
+  {
+    id: 'logo',
+    label: '品牌Logo',
+    type: 'text2image',
+    preset: {
+      baseModel: 'flux2-kein',
+      prompt: '品牌 Logo 设计，简洁大方，现代简约风格，适合各种场景使用',
+      industry: 'home',
+      style: 'luxury',
+      ratio: '1:1',
+    }
+  },
+];
+
 // 风格选项
 const styleOptions = [
   { id: 'flat', label: '扁平风格', description: '简洁明了，无阴影' },
@@ -209,18 +307,86 @@ const aspectRatioOptions = [
 ];
 
 const DesignPlatform = () => {
+  const [selectedBaseModel, setSelectedBaseModel] = useState(baseModels[0]); // 默认选择第一个底模
+  const [selectedTemplate, setSelectedTemplate] = useState(designTemplates[0]); // 默认选择第一个模板
+  const [templateDropdownOpen, setTemplateDropdownOpen] = useState(false); // 设计模板下拉框状态
+  const [baseModelDropdownOpen, setBaseModelDropdownOpen] = useState(false); // 底模下拉框状态
   const [selectedIndustry, setSelectedIndustry] = useState(null);
   const [selectedStyle, setSelectedStyle] = useState(null);
   const [prompt, setPrompt] = useState('');
-  const [referenceImage, setReferenceImage] = useState(null);
+  const [referenceImage, setReferenceImage] = useState(null); // 参考图（模板预设或用户上传）
+  const [productImage, setProductImage] = useState(null); // 产品图（用户上传，必选）
   const [selectedAspectRatio, setSelectedAspectRatio] = useState('1:1');
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [stage, setStage] = useState('');
   const [generatedResult, setGeneratedResult] = useState(null);
   const [rightTab, setRightTab] = useState('result'); // 'result' | 'history'
-  const fileInputRef = useRef(null);
 
+  // 判断当前是否需要显示图片上传区域
+  const shouldShowImageUpload = selectedTemplate?.type === 'image2image' ||
+    (selectedTemplate?.type === 'smart' && (referenceImage || productImage));
+  const fileInputRef = useRef(null);
+  const productImageInputRef = useRef(null);
+  const templateDropdownRef = useRef(null);
+
+  // 点击外部关闭下拉框
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (templateDropdownRef.current && !templateDropdownRef.current.contains(event.target)) {
+        setTemplateDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // 选择模板时自动填充预设参数
+  const handleSelectTemplate = (template) => {
+    setSelectedTemplate(template);
+
+    if (template.preset) {
+      const { baseModel, prompt: templatePrompt, industry, style, ratio, referenceImage: templateRefImage } = template.preset;
+
+      // 设置底模
+      const matchedBaseModel = baseModels.find(m => m.id === baseModel) || baseModels[0];
+      setSelectedBaseModel(matchedBaseModel);
+
+      // 设置提示词（始终填充）
+      if (templatePrompt) {
+        setPrompt(templatePrompt);
+      }
+
+      // 设置行业
+      const matchedIndustry = industries.find(i => i.id === industry);
+      if (matchedIndustry) {
+        setSelectedIndustry(matchedIndustry);
+      }
+
+      // 设置风格
+      const matchedStyle = styleOptions.find(s => s.id === style);
+      if (matchedStyle) {
+        setSelectedStyle(matchedStyle);
+      }
+
+      // 设置图片比例
+      setSelectedAspectRatio(ratio || '1:1');
+
+      // 设置参考图（如果有预设）
+      if (templateRefImage) {
+        setReferenceImage(templateRefImage);
+      } else {
+        setReferenceImage(null);
+      }
+
+      // 清空产品图
+      setProductImage(null);
+    }
+
+    setTemplateDropdownOpen(false);
+  };
+
+  // 参考图上传处理
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -255,9 +421,46 @@ const DesignPlatform = () => {
     e.preventDefault();
   };
 
+  // 产品图上传处理
+  const handleProductImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setProductImage(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveProductImage = () => {
+    setProductImage(null);
+    if (productImageInputRef.current) {
+      productImageInputRef.current.value = '';
+    }
+  };
+
+  const handleProductImageDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setProductImage(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleGenerate = async () => {
     if (!selectedIndustry || !selectedStyle) {
       alert('请至少选择行业和风格');
+      return;
+    }
+
+    // 图生图模板需要上传产品图
+    if (selectedTemplate?.type === 'image2image' && !productImage) {
+      alert('请上传产品图');
       return;
     }
 
@@ -310,40 +513,155 @@ const DesignPlatform = () => {
         <div className="w-[480px] flex-shrink-0">
           <Card className="h-full">
             <div className="flex flex-col h-full">
-              <div className="space-y-5 flex-1 overflow-auto">
-                {/* 上传参考图 */}
+              <div className="space-y-6 flex-1 overflow-auto pr-4 scrollbar-thin">
+                {/* 设计模板 */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">上传参考图</label>
-                  {referenceImage ? (
-                    <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
-                      <img src={referenceImage} alt="参考图" className="w-full h-full object-cover" />
-                      <button
-                        onClick={handleRemoveImage}
-                        className="absolute top-2 right-2 p-1 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div
-                      onDrop={handleDrop}
-                      onDragOver={handleDragOver}
-                      onClick={() => fileInputRef.current?.click()}
-                      className="aspect-video border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary-400 hover:bg-primary-50/50 transition-all"
+                  <label className="block text-sm font-bold text-gray-700 mb-2">设计模板</label>
+                  <div className="relative" ref={templateDropdownRef}>
+                    <button
+                      onClick={() => setTemplateDropdownOpen(!templateDropdownOpen)}
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-left flex items-center justify-between hover:border-gray-300 transition-colors cursor-pointer"
                     >
-                      <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                      <span className="text-sm text-gray-500">点击或拖拽上传</span>
-                      <span className="text-xs text-gray-400 mt-1">支持 JPG、PNG 格式</span>
-                    </div>
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
+                      <span className="text-sm font-medium text-gray-700">
+                        {selectedTemplate?.label}
+                      </span>
+                      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${templateDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {/* 下拉选项 - 使用条件渲染控制显示/隐藏 */}
+                    {templateDropdownOpen && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-80 overflow-auto">
+                        {/* 模板分组 */}
+                        <div className="p-2">
+                          <div className="text-xs font-medium text-gray-400 mb-2 px-2">选择模板</div>
+                          {designTemplates.map((template) => (
+                            <button
+                              key={template.id}
+                              onClick={() => handleSelectTemplate(template)}
+                              className={`
+                                w-full px-3 py-2 text-left text-sm rounded-lg hover:bg-gray-50 transition-colors cursor-pointer
+                                ${selectedTemplate?.id === template.id ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-700'}
+                              `}
+                            >
+                              {template.label}
+                              <span className="ml-2 text-xs text-gray-400">
+                                {template.type === 'text2image' ? '文生图' : template.type === 'image2image' ? '图生图' : '智能'}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* 底模选择 - 独立下拉框 */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">底模</label>
+                  <div className="relative">
+                    <button
+                      onClick={() => setBaseModelDropdownOpen(!baseModelDropdownOpen)}
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-left flex items-center justify-between hover:border-gray-300 transition-colors cursor-pointer"
+                    >
+                      <span className="text-sm font-medium text-gray-700">
+                        {selectedBaseModel?.label}
+                      </span>
+                      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${baseModelDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {baseModelDropdownOpen && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                        {baseModels.map((model) => (
+                          <button
+                            key={model.id}
+                            onClick={() => {
+                              setSelectedBaseModel(model);
+                              setBaseModelDropdownOpen(false);
+                            }}
+                            className={`
+                              w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 transition-colors cursor-pointer
+                              ${selectedBaseModel?.id === model.id ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-700'}
+                            `}
+                          >
+                            {model.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 上传参考图 - 图生图或智能模板显示 */}
+                {shouldShowImageUpload && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">上传参考图（可选）</label>
+                    {referenceImage ? (
+                      <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                        <img src={referenceImage} alt="参考图" className="w-full h-full object-cover" />
+                        <button
+                          onClick={handleRemoveImage}
+                          className="absolute top-2 right-2 p-1 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        onDrop={handleDrop}
+                        onDragOver={handleDragOver}
+                        onClick={() => fileInputRef.current?.click()}
+                        className="aspect-video border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary-400 hover:bg-primary-50/50 transition-all"
+                      >
+                        <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                        <span className="text-sm text-gray-500">点击或拖拽上传参考图</span>
+                        <span className="text-xs text-gray-400 mt-1">支持 JPG、PNG 格式</span>
+                      </div>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  </div>
+                )}
+
+                {/* 上传产品图 - 图生图模板必选 */}
+                {selectedTemplate?.type === 'image2image' && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      上传产品图 <span className="text-red-500">*</span>
+                    </label>
+                    {productImage ? (
+                      <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                        <img src={productImage} alt="产品图" className="w-full h-full object-cover" />
+                        <button
+                          onClick={handleRemoveProductImage}
+                          className="absolute top-2 right-2 p-1 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        onDrop={handleProductImageDrop}
+                        onDragOver={handleDragOver}
+                        onClick={() => productImageInputRef.current?.click()}
+                        className="aspect-video border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary-400 hover:bg-primary-50/50 transition-all"
+                      >
+                        <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                        <span className="text-sm text-gray-500">点击或拖拽上传产品图</span>
+                        <span className="text-xs text-gray-400 mt-1">支持 JPG、PNG 格式</span>
+                      </div>
+                    )}
+                    <input
+                      ref={productImageInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProductImageChange}
+                      className="hidden"
+                    />
+                  </div>
+                )}
 
                 {/* 输入提示词 */}
                 <div>
@@ -429,10 +747,10 @@ const DesignPlatform = () => {
 
               <button
                 onClick={handleGenerate}
-                disabled={isGenerating || (!selectedIndustry && !selectedStyle)}
+                disabled={isGenerating || (!selectedIndustry && !selectedStyle) || (selectedTemplate?.type === 'image2image' && !productImage)}
                 className={`
                   flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 cursor-pointer mt-4
-                  ${!selectedIndustry || !selectedStyle
+                  ${(!selectedIndustry || !selectedStyle) || (selectedTemplate?.type === 'image2image' && !productImage)
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'bg-gradient-to-r from-primary-600 to-primary-600 text-white hover:from-primary-700 hover:to-primary-700 shadow-lg shadow-primary-500/25'
                   }
