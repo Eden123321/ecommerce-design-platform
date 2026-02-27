@@ -4,9 +4,9 @@ import {
   Plus,
   MoreVertical,
   FolderKanban,
+  Heart,
 } from 'lucide-react';
 import Card from '../../components/common/Card/Card';
-import Badge from '../../components/common/Badge/Badge';
 import Button from '../../components/common/Button/Button';
 import Modal from '../../components/common/Modal/Modal';
 
@@ -15,70 +15,64 @@ const mockProjects = [
   {
     id: 1,
     name: '618促销活动主图',
-    description: '618大促主视觉设计，突出促销氛围',
     status: 'completed',
     type: 'banner',
     createdAt: '2024-01-15',
     updatedAt: '2024-01-15',
-    cover: null,
+    cover: '/images/ecommerce/3066480e150e254b7a072774d1092117.jpg',
+    params: { model: 'SDXL', industry: '电商', ratio: '16:9' },
   },
   {
     id: 2,
     name: '新品上市Banner',
-    description: '春季新品发布会宣传banner',
     status: 'in_progress',
     type: 'banner',
     createdAt: '2024-01-14',
     updatedAt: '2024-01-15',
-    cover: null,
+    cover: '/images/social/3be78ddf4124b4cc21830f0dce67e43c.jpg',
+    params: { model: 'Flux2-Kein', industry: '服装', ratio: '16:9' },
   },
   {
     id: 3,
     name: '会员日活动页面',
-    description: '会员专属优惠活动页面设计',
     status: 'completed',
     type: 'landing',
     createdAt: '2024-01-13',
     updatedAt: '2024-01-14',
-    cover: null,
+    cover: '/images/ecommerce/76081772fe50d4400079f7f47388b176.jpg',
+    params: { model: 'Flux2-Kein', industry: '电商', ratio: '16:9' },
   },
   {
     id: 4,
     name: '双11预热海报',
-    description: '双11提前预热宣传海报',
     status: 'draft',
     type: 'poster',
     createdAt: '2024-01-12',
     updatedAt: '2024-01-12',
-    cover: null,
+    cover: '/images/poster/8859307a6287009a268a049808f11a3f.jpg',
+    params: { model: 'SDXL', industry: '电商', ratio: '9:16' },
   },
   {
     id: 5,
     name: '品牌logo更新',
-    description: '品牌形象升级，logo重新设计',
     status: 'in_progress',
     type: 'branding',
     createdAt: '2024-01-11',
     updatedAt: '2024-01-15',
-    cover: null,
+    cover: '/images/ecommerce/d41a1973c80326b230266d549687436a.jpg',
+    params: { model: 'Flux2-Kein', industry: '家居', ratio: '1:1' },
   },
   {
     id: 6,
     name: '商品详情页模板',
-    description: '标准化商品详情页设计模板',
     status: 'completed',
     type: 'template',
     createdAt: '2024-01-10',
     updatedAt: '2024-01-12',
-    cover: null,
+    cover: '/images/ecommerce/42e945e92bc9df8ba1a2fbc1cf66514a.jpg',
+    params: { model: 'SDXL', industry: '电商', ratio: '1:1' },
   },
 ];
-
-const statusConfig = {
-  draft: { label: '草稿', variant: 'default' },
-  in_progress: { label: '进行中', variant: 'warning' },
-  completed: { label: '已完成', variant: 'success' },
-};
 
 const typeConfig = {
   banner: 'Banner',
@@ -89,8 +83,7 @@ const typeConfig = {
 };
 
 // 项目卡片组件
-const ProjectCard = ({ project, onEdit, onDelete, onDuplicate, onView, onGenerate }) => {
-  const status = statusConfig[project.status];
+const ProjectCard = ({ project, onEdit, onDelete, onDuplicate, onView, onGenerate, isFavorite, onToggleFavorite }) => {
   const type = typeConfig[project.type];
 
   return (
@@ -99,33 +92,37 @@ const ProjectCard = ({ project, onEdit, onDelete, onDuplicate, onView, onGenerat
       onClick={() => onView?.(project)}
     >
       {/* Cover */}
-      <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-t-xl flex items-center justify-center relative overflow-hidden">
+      <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-t-xl flex items-center justify-center relative overflow-hidden group">
         {project.cover ? (
-          <img src={project.cover} alt={project.name} className="w-full h-full object-cover" />
+          <img src={project.cover} alt={project.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
         ) : (
           <FolderKanban className="w-12 h-12 text-gray-300" />
         )}
 
-        {/* Hover Overlay - 只覆盖图片部分 */}
-        <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-          <button
-            onClick={(e) => { e.stopPropagation(); onView?.(project); }}
-            className="px-3 py-1.5 bg-white text-gray-900 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
-          >
-            查看
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onGenerate?.(project); }}
-            className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
-          >
-            生成
-          </button>
-        </div>
+        {/* 左上角：模型标签 */}
+        {project.params && (
+          <span className="absolute top-2 left-2 px-2 py-0.5 text-xs bg-black/50 text-white rounded z-10">
+            {project.params.model}
+          </span>
+        )}
+
+        {/* 右上角：收藏按钮 */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleFavorite?.(project.id); }}
+          className="absolute top-2 right-2 w-8 h-8 bg-white/90 hover:bg-white rounded-lg flex items-center justify-center transition-colors cursor-pointer opacity-0 group-hover:opacity-100 z-20"
+          title="收藏"
+        >
+          <Heart
+            className={`w-4 h-4 transition-colors ${
+              isFavorite ? 'text-red-500 fill-red-500' : 'text-gray-700'
+            }`}
+          />
+        </button>
       </div>
 
       {/* Content */}
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-2">
+      <div className="p-3">
+        <div className="flex items-start justify-between mb-1">
           <h3 className="font-medium text-gray-900 truncate pr-2">{project.name}</h3>
           <div className="relative">
             <button
@@ -137,15 +134,12 @@ const ProjectCard = ({ project, onEdit, onDelete, onDuplicate, onView, onGenerat
           </div>
         </div>
 
-        <p className="text-sm text-gray-500 mb-3 line-clamp-2">{project.description}</p>
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Badge variant={status.variant}>{status.label}</Badge>
-            <span className="text-xs text-gray-400">{type}</span>
+        {/* 生成参数 */}
+        {project.params && (
+          <div className="text-xs text-gray-500">
+            {project.params.industry} · {project.params.ratio}
           </div>
-          <span className="text-xs text-gray-400">{project.updatedAt}</span>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -222,10 +216,26 @@ const Projects = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
 
+  // 收藏状态
+  const [favorites, setFavorites] = useState(() => {
+    const initial = {};
+    mockProjects.forEach((p) => {
+      initial[p.id] = false;
+    });
+    return initial;
+  });
+
+  // 切换收藏
+  const toggleFavorite = (id) => {
+    setFavorites((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
   // 筛选项目
   const filteredProjects = projects.filter((project) => {
-    const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -316,6 +326,8 @@ const Projects = () => {
             <ProjectCard
               key={project.id}
               project={project}
+              isFavorite={favorites[project.id]}
+              onToggleFavorite={toggleFavorite}
               onEdit={() => console.log('Edit:', project.id)}
               onDelete={() => console.log('Delete:', project.id)}
               onDuplicate={() => console.log('Duplicate:', project.id)}

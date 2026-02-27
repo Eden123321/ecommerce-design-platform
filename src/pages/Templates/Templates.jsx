@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Search,
-  Star,
+  Heart,
   Download,
   Copy,
   FolderOpen,
@@ -23,7 +23,8 @@ const mockTemplates = [
     tags: ['促销', '双11', '电商'],
     usageCount: 1250,
     isFavorite: true,
-    preview: null,
+    preview: '/images/ecommerce/19b1873b618e7029408b7078ae6d867a.jpg',
+    params: { model: 'SDXL', industry: '电商', style: '现代风格', ratio: '16:9', type: '文生图' },
   },
   {
     id: 2,
@@ -32,7 +33,8 @@ const mockTemplates = [
     tags: ['新品', '发布会', '时尚'],
     usageCount: 890,
     isFavorite: false,
-    preview: null,
+    preview: '/images/poster/2b9cf0bc7e51ff4071360284982129b5.jpg',
+    params: { model: 'Flux2-Kein', industry: '服装', style: '现代风格', ratio: '9:16', type: '图生图' },
   },
   {
     id: 3,
@@ -41,7 +43,8 @@ const mockTemplates = [
     tags: ['会员', '优惠', '促销'],
     usageCount: 756,
     isFavorite: true,
-    preview: null,
+    preview: '/images/social/5ffc47b6d7570867049c88f7f4c34525.jpg',
+    params: { model: 'SDXL', industry: '电商', style: '活泼风格', ratio: '16:9', type: '文生图' },
   },
   {
     id: 4,
@@ -50,7 +53,8 @@ const mockTemplates = [
     tags: ['品牌', 'Logo', '企业'],
     usageCount: 543,
     isFavorite: false,
-    preview: null,
+    preview: '/images/ecommerce/5e4fdfb5022fdff2a6e9dd57ca499d3c.jpg',
+    params: { model: 'Flux2-Kein', industry: '家居', style: '轻奢风格', ratio: '1:1', type: '文生图' },
   },
   {
     id: 5,
@@ -59,7 +63,8 @@ const mockTemplates = [
     tags: ['商品', '详情页', '电商'],
     usageCount: 432,
     isFavorite: false,
-    preview: null,
+    preview: '/images/ecommerce/a8adcd43bc28e26508ba9741177e791b.jpg',
+    params: { model: 'Flux2-Kein', industry: '电商', style: '扁平风格', ratio: '1:1', type: '图生图' },
   },
   {
     id: 6,
@@ -68,7 +73,68 @@ const mockTemplates = [
     tags: ['节日', '问候', '祝福'],
     usageCount: 321,
     isFavorite: false,
-    preview: null,
+    preview: '/images/poster/54b5db689d637bcba2a0ed3bd8d719e0.jpg',
+    params: { model: 'Qwen2509', industry: '电商', style: '极简风格', ratio: '1:1', type: '智能' },
+  },
+  {
+    id: 7,
+    name: '春季上新Banner',
+    category: 'banner',
+    tags: ['春季', '上新', '时尚'],
+    usageCount: 654,
+    isFavorite: false,
+    preview: '/images/social/3be78ddf4124b4cc21830f0dce67e43c.jpg',
+    params: { model: 'SDXL', industry: '服装', style: '现代风格', ratio: '16:9', type: '文生图' },
+  },
+  {
+    id: 8,
+    name: '美妆产品海报',
+    category: 'poster',
+    tags: ['美妆', '护肤', '化妆品'],
+    usageCount: 567,
+    isFavorite: true,
+    preview: '/images/ecommerce/76081772fe50d4400079f7f47388b176.jpg',
+    params: { model: 'Flux2-Kein', industry: '美妆', style: '轻奢风格', ratio: '9:16', type: '图生图' },
+  },
+  {
+    id: 9,
+    name: '数码产品展示',
+    category: 'landing',
+    tags: ['数码', '电子', '科技'],
+    usageCount: 432,
+    isFavorite: false,
+    preview: '/images/ecommerce/356ba44a0aad3478ed13034341e363d0.jpg',
+    params: { model: 'Qwen2511', industry: '数码', style: '现代风格', ratio: '16:9', type: '图生图' },
+  },
+  {
+    id: 10,
+    name: '食品促销海报',
+    category: 'poster',
+    tags: ['食品', '美食', '促销'],
+    usageCount: 398,
+    isFavorite: false,
+    preview: '/images/poster/39848c8e726c3e8736d30b60d26d9913.jpg',
+    params: { model: 'SDXL', industry: '食品', style: '活泼风格', ratio: '1:1', type: '文生图' },
+  },
+  {
+    id: 11,
+    name: '家居生活Banner',
+    category: 'banner',
+    tags: ['家居', '生活', '温馨'],
+    usageCount: 345,
+    isFavorite: false,
+    preview: '/images/ecommerce/d41a1973c80326b230266d549687436a.jpg',
+    params: { model: 'Flux2-Kein', industry: '家居', style: '极简风格', ratio: '16:9', type: '智能' },
+  },
+  {
+    id: 12,
+    name: '企业品牌宣传',
+    category: 'branding',
+    tags: ['企业', '品牌', '宣传'],
+    usageCount: 287,
+    isFavorite: false,
+    preview: '/images/ecommerce/42e945e92bc9df8ba1a2fbc1cf66514a.jpg',
+    params: { model: 'Flux2-Kein', industry: '家居', style: '轻奢风格', ratio: '16:9', type: '文生图' },
   },
 ];
 
@@ -81,52 +147,49 @@ const categories = [
 ];
 
 // 模板卡片
-const TemplateCard = ({ template, onUse, onPreview }) => {
+const TemplateCard = ({ template, onUse, onPreview, isFavorite, onToggleFavorite }) => {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 hover:border-primary-300 hover:shadow-md transition-all duration-200 cursor-pointer">
+    <div
+      className="bg-white rounded-xl border border-gray-200 hover:border-primary-300 hover:shadow-md transition-all duration-200 cursor-pointer"
+      onClick={onPreview}
+    >
       {/* Preview */}
-      <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-t-xl flex items-center justify-center relative overflow-hidden">
-        <FolderOpen className="w-12 h-12 text-gray-300" />
-
-        {/* Hover Overlay - 只覆盖图片部分 */}
-        <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-          <button
-            onClick={(e) => { e.stopPropagation(); onPreview?.(); }}
-            className="px-3 py-1.5 bg-white text-gray-900 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
-          >
-            预览
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onUse?.(); }}
-            className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
-          >
-            使用
-          </button>
-        </div>
+      <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-t-xl flex items-center justify-center relative overflow-hidden group">
+        {template.preview ? (
+          <img src={template.preview} alt={template.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+        ) : (
+          <FolderOpen className="w-12 h-12 text-gray-300" />
+        )}
+        {/* 左上角：模型标签 */}
+        {template.params && (
+          <span className="absolute top-2 left-2 px-2 py-0.5 text-xs bg-black/50 text-white rounded z-10">
+            {template.params.model}
+          </span>
+        )}
+        {/* 右上角：收藏按钮 */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleFavorite?.(template.id); }}
+          className="absolute top-2 right-2 w-8 h-8 bg-white/90 hover:bg-white rounded-lg flex items-center justify-center transition-colors cursor-pointer opacity-0 group-hover:opacity-100 z-20"
+          title="收藏"
+        >
+          <Heart
+            className={`w-4 h-4 transition-colors ${
+              isFavorite ? 'text-red-500 fill-red-500' : 'text-gray-700'
+            }`}
+          />
+        </button>
       </div>
 
       {/* Content */}
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-2">
-          <h3 className="font-medium text-gray-900 truncate pr-2">{template.name}</h3>
-          {template.isFavorite && (
-            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
-          )}
-        </div>
+      <div className="p-3">
+        <h3 className="font-medium text-gray-900 truncate mb-1">{template.name}</h3>
 
-        <div className="flex flex-wrap gap-1 mb-3">
-          {template.tags.slice(0, 2).map((tag) => (
-            <span key={tag} className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
-              {tag}
-            </span>
-          ))}
-        </div>
-
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-400">
-            使用 {template.usageCount} 次
-          </span>
-        </div>
+        {/* 生成参数 */}
+        {template.params && (
+          <div className="text-xs text-gray-500">
+            {template.params.industry} · {template.params.ratio}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -155,13 +218,18 @@ const TemplatePreviewModal = ({ template, isOpen, onClose, onUse }) => {
 
           {/* Preview */}
           <div className="p-4">
-            <div className="aspect-[16/9] bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
-              <FolderOpen className="w-24 h-24 text-gray-300" />
+            <div className="aspect-[16/9] bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+              {template.preview ? (
+                <img src={template.preview} alt={template.name} className="w-full h-full object-cover" />
+              ) : (
+                <FolderOpen className="w-24 h-24 text-gray-300" />
+              )}
             </div>
           </div>
 
           {/* Info */}
           <div className="p-4 border-t border-gray-100">
+            {/* 标签 */}
             <div className="flex flex-wrap gap-2 mb-4">
               {template.tags.map((tag) => (
                 <span key={tag} className="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded-full">
@@ -169,6 +237,30 @@ const TemplatePreviewModal = ({ template, isOpen, onClose, onUse }) => {
                 </span>
               ))}
             </div>
+
+            {/* 生成参数 */}
+            {template.params && (
+              <div className="mb-4">
+                <div className="text-xs font-medium text-gray-500 mb-2">生成参数</div>
+                <div className="flex flex-wrap gap-2">
+                  <span className="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-md">
+                    模型: {template.params.model}
+                  </span>
+                  <span className="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-md">
+                    行业: {template.params.industry}
+                  </span>
+                  <span className="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-md">
+                    风格: {template.params.style}
+                  </span>
+                  <span className="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-md">
+                    比例: {template.params.ratio}
+                  </span>
+                  <span className="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-md">
+                    类型: {template.params.type}
+                  </span>
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-500">
@@ -196,6 +288,23 @@ const Templates = () => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [previewTemplate, setPreviewTemplate] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
+
+  // 收藏状态
+  const [favorites, setFavorites] = useState(() => {
+    const initial = {};
+    mockTemplates.forEach((t) => {
+      initial[t.id] = t.isFavorite;
+    });
+    return initial;
+  });
+
+  // 切换收藏
+  const toggleFavorite = (id) => {
+    setFavorites((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
 
   // 筛选
   const filteredTemplates = templates.filter((template) => {
@@ -252,6 +361,8 @@ const Templates = () => {
             <TemplateCard
               key={template.id}
               template={template}
+              isFavorite={favorites[template.id]}
+              onToggleFavorite={toggleFavorite}
               onUse={() => console.log('Use template:', template.id)}
               onPreview={() => {
                 setPreviewTemplate(template);

@@ -519,7 +519,10 @@ const DesignPlatform = () => {
                   <label className="block text-sm font-bold text-gray-700 mb-2">设计模板</label>
                   <div className="relative" ref={templateDropdownRef}>
                     <button
-                      onClick={() => setTemplateDropdownOpen(!templateDropdownOpen)}
+                      onClick={() => {
+                        setTemplateDropdownOpen(!templateDropdownOpen);
+                        if (!templateDropdownOpen) setBaseModelDropdownOpen(false);
+                      }}
                       className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-left flex items-center justify-between hover:border-gray-300 transition-colors cursor-pointer"
                     >
                       <span className="text-sm font-medium text-gray-700">
@@ -554,12 +557,15 @@ const DesignPlatform = () => {
                   </div>
                 </div>
 
-                {/* 底模选择 - 独立下拉框 */}
+                {/* 模型选择 - 独立下拉框 */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">底模</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">模型</label>
                   <div className="relative">
                     <button
-                      onClick={() => setBaseModelDropdownOpen(!baseModelDropdownOpen)}
+                      onClick={() => {
+                        setBaseModelDropdownOpen(!baseModelDropdownOpen);
+                        if (!baseModelDropdownOpen) setTemplateDropdownOpen(false);
+                      }}
                       className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-left flex items-center justify-between hover:border-gray-300 transition-colors cursor-pointer"
                     >
                       <span className="text-sm font-medium text-gray-700">

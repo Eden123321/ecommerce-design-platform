@@ -9,7 +9,6 @@ import {
   Heart,
   Search,
   Download,
-  Plus,
 } from 'lucide-react';
 
 const Home = ({ onNavigate }) => {
@@ -342,7 +341,7 @@ const Home = ({ onNavigate }) => {
                       <img
                         src={img.image}
                         alt={img.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                     ) : (
                       <div className="h-full bg-gray-200 flex items-center justify-center">
@@ -350,7 +349,7 @@ const Home = ({ onNavigate }) => {
                       </div>
                     )}
                     {/* Hover Overlay with Buttons */}
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
                       {/* Top Right: Download & Favorite */}
                       <div className="absolute top-2 right-2 flex gap-1.5">
                         <button
@@ -392,9 +391,8 @@ const Home = ({ onNavigate }) => {
                             // 跳转到 AI 设计页面
                             onNavigate('design-platform');
                           }}
-                          className="w-full py-2.5 bg-white/90 hover:bg-white text-gray-800 text-sm font-medium rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2"
+                          className="w-full py-2.5 bg-white/90 hover:bg-white text-gray-800 text-sm font-medium rounded-lg transition-colors cursor-pointer"
                         >
-                          <Plus className="w-4 h-4" />
                           一键同款
                         </button>
                       </div>
