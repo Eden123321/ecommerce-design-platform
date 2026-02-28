@@ -2,9 +2,7 @@ import React from 'react';
 import {
   Home,
   FolderKanban,
-  ClipboardList,
   FileText,
-  Wrench,
   Database,
   Cpu,
   List,
@@ -26,15 +24,13 @@ const menuGroups = [
     title: 'AI 设计',
     items: [
       { id: 'design-platform', label: 'AI 设计', icon: Sparkles },
-      { id: 'models', label: '模型', icon: Cpu },
     ]
   },
   {
-    title: '资源',
+    title: '工具',
     items: [
-      { id: 'datasets', label: '测评集', icon: ClipboardList },
-      { id: 'datasets2', label: '数据集', icon: Database },
-      { id: 'tools', label: '工具', icon: Wrench },
+      { id: 'models', label: '模型训练', icon: Cpu },
+      { id: 'batch-production', label: '批量生产', icon: Database },
     ]
   },
   {
@@ -73,7 +69,7 @@ const Sidebar = ({ activePage, onNavigate }) => {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => onNavigate(item.id === 'datasets2' ? 'datasets' : item.id)}
+                    onClick={() => onNavigate(item.id)}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
                       isActive
                         ? 'bg-gray-100 text-gray-900'

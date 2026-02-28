@@ -1,40 +1,48 @@
 import React, { useState } from 'react';
-import { Sparkles, Play, ArrowLeft } from 'lucide-react';
+import { Sparkles, Play, ArrowLeft, Layers, Plus } from 'lucide-react';
 import Layout from './components/layout/Layout';
 import Home from './pages/Home/Home';
 import DesignPlatform from './components/design/DesignPlatform';
 import Projects from './pages/Projects/Projects';
-import Datasets from './pages/Datasets/Datasets';
 import Templates from './pages/Templates/Templates';
 import Models from './pages/Models/Models';
 import LoraTraining from './pages/LoraTraining/LoraTraining';
+import BatchProduction from './pages/BatchProduction/BatchProduction';
 import Button from './components/common/Button/Button';
 
 function App() {
   const [activePage, setActivePage] = useState('home');
+  const [showNewTaskModal, setShowNewTaskModal] = useState(false);
 
   // 页面标题映射
   const pageTitles = {
     home: '灵感广场',
     projects: '项目管理',
-    datasets: '测评集',
     templates: '模板库',
     'design-platform': 'AI 设计',
-    tools: '工具箱',
     models: '模型库',
-    'lora-training': 'LoRA 训练',
+    'lora-training': '模型训练',
+    'batch-production': '批量任务',
     logs: '日志',
     settings: '设置',
-    'data-management': '数据集管理',
   };
 
   // 右侧内容（根据页面动态显示）
   const getRightContent = () => {
     if (activePage === 'design-platform') {
       return (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
-          <Sparkles className="w-4 h-4 text-gray-600" />
-          <span className="text-sm text-gray-700">今日生成: <span className="font-medium text-gray-900">12</span></span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
+            <Sparkles className="w-4 h-4 text-gray-600" />
+            <span className="text-sm text-gray-700">今日生成: <span className="font-medium text-gray-900">12</span></span>
+          </div>
+          <Button
+            variant="secondary"
+            leftIcon={<Layers className="w-4 h-4" />}
+            onClick={() => setActivePage('batch-production')}
+          >
+            批量任务
+          </Button>
         </div>
       );
     }
@@ -46,6 +54,17 @@ function App() {
           onClick={() => setActivePage('lora-training')}
         >
           开始训练
+        </Button>
+      );
+    }
+    if (activePage === 'batch-production') {
+      return (
+        <Button
+          variant="primary"
+          leftIcon={<Plus className="w-4 h-4" />}
+          onClick={() => setShowNewTaskModal(true)}
+        >
+          新建任务
         </Button>
       );
     }
@@ -70,9 +89,6 @@ function App() {
 
   // 获取页面标题
   const getPageTitle = () => {
-    if (activePage === 'lora-training') {
-      return '模型训练';
-    }
     return pageTitles[activePage] || '首页';
   };
 
@@ -82,8 +98,6 @@ function App() {
         return <Home onNavigate={setActivePage} />;
       case 'projects':
         return <Projects />;
-      case 'datasets':
-        return <Datasets />;
       case 'templates':
         return <Templates />;
       case 'design-platform':
@@ -92,6 +106,8 @@ function App() {
         return <Models />;
       case 'lora-training':
         return <LoraTraining onNavigate={setActivePage} />;
+      case 'batch-production':
+        return <BatchProduction onNavigate={setActivePage} showNewTaskModal={showNewTaskModal} setShowNewTaskModal={setShowNewTaskModal} />;
       default:
         return (
           <div className="p-6">
