@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Heart,
@@ -191,7 +191,7 @@ const categories = [
 const ModelCard = ({ model, onPreview, isFavorite, onToggleFavorite }) => {
   return (
     <div
-      className="bg-white rounded-xl border border-gray-200 hover:border-primary-300 hover:shadow-md transition-all duration-200 cursor-pointer"
+      className="bg-white rounded-xl border border-gray-200 hover:border-primary-300 hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-pointer"
       onClick={onPreview}
     >
       {/* Cover */}
@@ -234,18 +234,34 @@ const ModelCard = ({ model, onPreview, isFavorite, onToggleFavorite }) => {
 
 // 模型预览弹窗
 const ModelPreviewModal = ({ model, isOpen, onClose, onUse }) => {
-  if (!isOpen || !model) return null;
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsVisible(true);
+    }
+  }, [isOpen]);
+
+  const handleClose = () => {
+    setIsVisible(false);
+    setTimeout(onClose, 200);
+  };
+
+  if (!isOpen && !isVisible) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+      <div
+        className={`fixed inset-0 bg-black/50 transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+        onClick={handleClose}
+      />
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-4xl bg-white rounded-xl shadow-xl">
+        <div className={`relative w-full max-w-4xl bg-white rounded-xl shadow-xl transition-all duration-200 ${isVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-100">
             <h3 className="text-lg font-semibold text-gray-900">{model.name}</h3>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
             >
               <span className="sr-only">关闭</span>
@@ -296,7 +312,7 @@ const ModelPreviewModal = ({ model, isOpen, onClose, onUse }) => {
                 已被使用 {model.usageCount} 次
               </span>
               <div className="flex items-center gap-3">
-                <Button variant="secondary" onClick={onClose}>
+                <Button variant="secondary" onClick={handleClose}>
                   取消
                 </Button>
                 <Button variant="primary" leftIcon={<Download className="w-4 h-4" />} onClick={onUse}>
@@ -393,7 +409,7 @@ const Models = () => {
 
       {/* 分类导航 - 仅在模型库时显示，文字+下划线形式 */}
       {activeTab === 'library' && (
-        <div className="flex items-center gap-8 mb-4 overflow-x-auto pb-2 border-b border-gray-200">
+        <div className="flex items-center gap-8 mb-4 overflow-x-auto pb-2 border-b border-gray-200 animate-fade-in">
           {categories.map((category) => (
             <button
               key={category.id}
@@ -419,7 +435,7 @@ const Models = () => {
       {activeTab === 'library' ? (
         /* 模型库 */
         filteredLibrary.length > 0 ? (
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-4 animate-fade-in-up">
             {filteredLibrary.map((model) => (
               <ModelCard
                 key={model.id}
@@ -444,11 +460,11 @@ const Models = () => {
         )
       ) : (
         /* 我的训练 */
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 gap-4 animate-fade-in-up">
           {filteredTraining.map((training) => (
             <div
               key={training.id}
-              className="bg-white rounded-xl border border-gray-200 hover:border-primary-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
+              className="bg-white rounded-xl border border-gray-200 hover:border-primary-300 hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-pointer overflow-hidden"
             >
               {/* 封面图片 */}
               <div className="aspect-[4/3] bg-gray-100 relative group">

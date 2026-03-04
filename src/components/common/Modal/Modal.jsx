@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 
 const Modal = ({
@@ -9,8 +9,11 @@ const Modal = ({
   size = 'md',
   showClose = true,
 }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
   useEffect(() => {
     if (isOpen) {
+      setIsVisible(true);
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -20,7 +23,12 @@ const Modal = ({
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  const handleClose = () => {
+    setIsVisible(false);
+    setTimeout(onClose, 200);
+  };
+
+  if (!isOpen && !isVisible) return null;
 
   const sizes = {
     sm: 'max-w-sm',
@@ -34,8 +42,8 @@ const Modal = ({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 transition-opacity"
-        onClick={onClose}
+        className={`fixed inset-0 bg-black/50 transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+        onClick={handleClose}
       />
 
       {/* Modal */}
@@ -45,6 +53,7 @@ const Modal = ({
             relative w-full ${sizes[size]}
             bg-white rounded-xl shadow-xl
             transform transition-all duration-200
+            ${isVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}
           `}
         >
           {/* Header */}
@@ -57,7 +66,7 @@ const Modal = ({
               )}
               {showClose && (
                 <button
-                  onClick={onClose}
+                  onClick={handleClose}
                   className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                 >
                   <X className="w-5 h-5" />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Heart,
@@ -150,7 +150,7 @@ const categories = [
 const TemplateCard = ({ template, onUse, onPreview, isFavorite, onToggleFavorite }) => {
   return (
     <div
-      className="bg-white rounded-xl border border-gray-200 hover:border-primary-300 hover:shadow-md transition-all duration-200 cursor-pointer"
+      className="bg-white rounded-xl border border-gray-200 hover:border-primary-300 hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-pointer"
       onClick={onPreview}
     >
       {/* Preview */}
@@ -197,18 +197,34 @@ const TemplateCard = ({ template, onUse, onPreview, isFavorite, onToggleFavorite
 
 // 模板预览弹窗
 const TemplatePreviewModal = ({ template, isOpen, onClose, onUse }) => {
-  if (!isOpen || !template) return null;
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsVisible(true);
+    }
+  }, [isOpen]);
+
+  const handleClose = () => {
+    setIsVisible(false);
+    setTimeout(onClose, 200);
+  };
+
+  if (!isOpen && !isVisible) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+      <div
+        className={`fixed inset-0 bg-black/50 transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+        onClick={handleClose}
+      />
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-4xl bg-white rounded-xl shadow-xl">
+        <div className={`relative w-full max-w-4xl bg-white rounded-xl shadow-xl transition-all duration-200 ${isVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-100">
             <h3 className="text-lg font-semibold text-gray-900">{template.name}</h3>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
             >
               <span className="sr-only">关闭</span>
@@ -315,7 +331,7 @@ const Templates = () => {
   });
 
   return (
-    <div className="p-6">
+    <div className="p-6 animate-fade-in-up">
       {/* Category & Search Bar */}
       <Card className="mb-6">
         <div className="flex items-center gap-4">

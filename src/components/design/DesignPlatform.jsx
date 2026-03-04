@@ -14,6 +14,7 @@ import {
   TrendingUp,
   Upload,
   FileImage,
+  Layers,
 } from 'lucide-react';
 import Card from '../common/Card/Card';
 import Badge from '../common/Badge/Badge';
@@ -306,7 +307,7 @@ const aspectRatioOptions = [
   { id: '4:3', label: '4:3', description: '标准' },
 ];
 
-const DesignPlatform = () => {
+const DesignPlatform = ({ designParams, setDesignParams, onOpenBatchModal }) => {
   const [selectedBaseModel, setSelectedBaseModel] = useState(baseModels[0]); // 默认选择第一个底模
   const [selectedTemplate, setSelectedTemplate] = useState(designTemplates[0]); // 默认选择第一个模板
   const [templateDropdownOpen, setTemplateDropdownOpen] = useState(false); // 设计模板下拉框状态
@@ -329,6 +330,22 @@ const DesignPlatform = () => {
   const fileInputRef = useRef(null);
   const productImageInputRef = useRef(null);
   const templateDropdownRef = useRef(null);
+
+  // 同步 designParams 到父组件
+  useEffect(() => {
+    if (setDesignParams) {
+      setDesignParams({
+        industry: selectedIndustry,
+        style: selectedStyle,
+        ratio: selectedAspectRatio,
+        baseModel: selectedBaseModel,
+        template: selectedTemplate,
+        prompt: prompt,
+        referenceImage: referenceImage,
+        productImage: productImage,
+      });
+    }
+  }, [selectedIndustry, selectedStyle, selectedAspectRatio, selectedBaseModel, selectedTemplate, prompt, referenceImage, productImage]);
 
   // 点击外部关闭下拉框
   useEffect(() => {
@@ -507,7 +524,7 @@ const DesignPlatform = () => {
   };
 
   return (
-    <div className="p-6 h-full">
+    <div className="p-6 h-full animate-fade-in-up">
       <div className="flex gap-6 h-full">
         {/* 左侧 - 用户输入区域 */}
         <div className="w-[480px] flex-shrink-0">
@@ -528,32 +545,30 @@ const DesignPlatform = () => {
                       <span className="text-sm font-medium text-gray-700">
                         {selectedTemplate?.label}
                       </span>
-                      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${templateDropdownOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${templateDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {/* 下拉选项 - 使用条件渲染控制显示/隐藏 */}
-                    {templateDropdownOpen && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-80 overflow-auto">
-                        {/* 模板分组 */}
-                        <div className="p-2">
-                          <div className="text-xs font-medium text-gray-400 mb-2 px-2">选择模板</div>
-                          {designTemplates.map((template) => (
-                            <button
-                              key={template.id}
-                              onClick={() => handleSelectTemplate(template)}
-                              className={`
-                                w-full px-3 py-2 text-left text-sm rounded-lg hover:bg-gray-50 transition-colors cursor-pointer
-                                ${selectedTemplate?.id === template.id ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-700'}
-                              `}
-                            >
-                              {template.label}
-                              <span className="ml-2 text-xs text-gray-400">
-                                {template.type === 'text2image' ? '文生图' : template.type === 'image2image' ? '图生图' : '智能'}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
+                    <div className={`absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-80 overflow-auto transition-all duration-150 origin-top ${templateDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
+                      {/* 模板分组 */}
+                      <div className="p-2">
+                        <div className="text-xs font-medium text-gray-400 mb-2 px-2">选择模板</div>
+                        {designTemplates.map((template) => (
+                          <button
+                            key={template.id}
+                            onClick={() => handleSelectTemplate(template)}
+                            className={`
+                              w-full px-3 py-2 text-left text-sm rounded-lg hover:bg-gray-50 transition-colors cursor-pointer
+                              ${selectedTemplate?.id === template.id ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-700'}
+                            `}
+                          >
+                            {template.label}
+                            <span className="ml-2 text-xs text-gray-400">
+                              {template.type === 'text2image' ? '文生图' : template.type === 'image2image' ? '图生图' : '智能'}
+                            </span>
+                          </button>
+                        ))}
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
 
@@ -571,27 +586,25 @@ const DesignPlatform = () => {
                       <span className="text-sm font-medium text-gray-700">
                         {selectedBaseModel?.label}
                       </span>
-                      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${baseModelDropdownOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${baseModelDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
-                    {baseModelDropdownOpen && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                        {baseModels.map((model) => (
-                          <button
-                            key={model.id}
-                            onClick={() => {
-                              setSelectedBaseModel(model);
-                              setBaseModelDropdownOpen(false);
-                            }}
-                            className={`
-                              w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 transition-colors cursor-pointer
-                              ${selectedBaseModel?.id === model.id ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-700'}
-                            `}
-                          >
-                            {model.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                    <div className={`absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 transition-all duration-150 origin-top ${baseModelDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
+                      {baseModels.map((model) => (
+                        <button
+                          key={model.id}
+                          onClick={() => {
+                            setSelectedBaseModel(model);
+                            setBaseModelDropdownOpen(false);
+                          }}
+                          className={`
+                            w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 transition-colors cursor-pointer
+                            ${selectedBaseModel?.id === model.id ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-700'}
+                          `}
+                        >
+                          {model.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
@@ -751,20 +764,29 @@ const DesignPlatform = () => {
                 </div>
               </div>
 
-              <button
-                onClick={handleGenerate}
-                disabled={isGenerating || (!selectedIndustry && !selectedStyle) || (selectedTemplate?.type === 'image2image' && !productImage)}
-                className={`
-                  flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 cursor-pointer mt-4
-                  ${(!selectedIndustry || !selectedStyle) || (selectedTemplate?.type === 'image2image' && !productImage)
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-primary-600 to-primary-600 text-white hover:from-primary-700 hover:to-primary-700 shadow-lg shadow-primary-500/25'
-                  }
-                `}
-              >
-                <Sparkles className="w-5 h-5" />
-                {isGenerating ? '生成中...' : 'AI 生成图片'}
-              </button>
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={handleGenerate}
+                  disabled={isGenerating || (!selectedIndustry && !selectedStyle) || (selectedTemplate?.type === 'image2image' && !productImage)}
+                  className={`
+                    flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 cursor-pointer
+                    ${(!selectedIndustry || !selectedStyle) || (selectedTemplate?.type === 'image2image' && !productImage)
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-primary-600 to-primary-600 text-white hover:from-primary-700 hover:to-primary-700 shadow-lg shadow-primary-500/25'
+                    }
+                  `}
+                >
+                  <Sparkles className="w-5 h-5" />
+                  {isGenerating ? '生成中...' : 'AI 生成图片'}
+                </button>
+                <button
+                  onClick={onOpenBatchModal}
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 cursor-pointer"
+                >
+                  <Layers className="w-5 h-5" />
+                  批量任务
+                </button>
+              </div>
             </div>
           </Card>
         </div>

@@ -8,11 +8,62 @@ import Templates from './pages/Templates/Templates';
 import Models from './pages/Models/Models';
 import LoraTraining from './pages/LoraTraining/LoraTraining';
 import BatchProduction from './pages/BatchProduction/BatchProduction';
+import Datasets from './pages/Datasets/Datasets';
 import Button from './components/common/Button/Button';
 
 function App() {
   const [activePage, setActivePage] = useState('home');
-  const [showNewTaskModal, setShowNewTaskModal] = useState(false);
+  const [showBatchModal, setShowBatchModal] = useState(false);
+
+  // 设计参数状态 - 提升到 App 级别
+  const [designParams, setDesignParams] = useState({
+    industry: null,
+    style: null,
+    ratio: '1:1',
+    baseModel: null,
+    template: null,
+  });
+
+  // 批量任务列表
+  const [tasks, setTasks] = useState([
+    {
+      id: 1,
+      name: '电商主图批量生成',
+      status: 'completed',
+      progress: 100,
+      imageCount: 20,
+      createdAt: '2024-01-20 14:30',
+      cover: '/images/ecommerce/c0d3059e7b17365dc32c50a031d62e3f.jpg',
+    },
+    {
+      id: 2,
+      name: '新品海报批量生成',
+      status: 'processing',
+      progress: 65,
+      imageCount: 10,
+      createdAt: '2024-01-20 10:15',
+      cover: '/images/ecommerce/cce4010d4fc5718774e5a0a2b1c5722c.jpg',
+    },
+  ]);
+
+  // 添加新任务
+  const handleCreateTask = (taskData) => {
+    const newTask = {
+      id: Date.now(),
+      ...taskData,
+      status: 'processing',
+      progress: 0,
+      createdAt: new Date().toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+    };
+    setTasks([newTask, ...tasks]);
+    setShowBatchModal(false);
+  };
 
   // 页面标题映射
   const pageTitles = {
@@ -23,6 +74,7 @@ function App() {
     models: '模型库',
     'lora-training': '模型训练',
     'batch-production': '批量任务',
+    datasets: '测评集',
     logs: '日志',
     settings: '设置',
   };
@@ -36,13 +88,6 @@ function App() {
             <Sparkles className="w-4 h-4 text-gray-600" />
             <span className="text-sm text-gray-700">今日生成: <span className="font-medium text-gray-900">12</span></span>
           </div>
-          <Button
-            variant="secondary"
-            leftIcon={<Layers className="w-4 h-4" />}
-            onClick={() => setActivePage('batch-production')}
-          >
-            批量任务
-          </Button>
         </div>
       );
     }
@@ -54,17 +99,6 @@ function App() {
           onClick={() => setActivePage('lora-training')}
         >
           开始训练
-        </Button>
-      );
-    }
-    if (activePage === 'batch-production') {
-      return (
-        <Button
-          variant="primary"
-          leftIcon={<Plus className="w-4 h-4" />}
-          onClick={() => setShowNewTaskModal(true)}
-        >
-          新建任务
         </Button>
       );
     }
@@ -101,13 +135,31 @@ function App() {
       case 'templates':
         return <Templates />;
       case 'design-platform':
-        return <DesignPlatform />;
+        return <DesignPlatform designParams={designParams} setDesignParams={setDesignParams} onOpenBatchModal={() => setShowBatchModal(true)} />;
       case 'models':
         return <Models />;
       case 'lora-training':
         return <LoraTraining onNavigate={setActivePage} />;
       case 'batch-production':
-        return <BatchProduction onNavigate={setActivePage} showNewTaskModal={showNewTaskModal} setShowNewTaskModal={setShowNewTaskModal} />;
+        return <BatchProduction onNavigate={setActivePage} tasks={tasks} />;
+      case 'datasets':
+        return <Datasets />;
+      case 'logs':
+        return (
+          <div className="p-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+              <p className="text-gray-500">日志功能开发中...</p>
+            </div>
+          </div>
+        );
+      case 'settings':
+        return (
+          <div className="p-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+              <p className="text-gray-500">设置功能开发中...</p>
+            </div>
+          </div>
+        );
       default:
         return (
           <div className="p-6">
@@ -128,6 +180,15 @@ function App() {
       rightContent={getRightContent()}
     >
       {renderPage()}
+      {/* 批量任务弹窗 */}
+      {showBatchModal && (
+        <BatchProduction.Modal
+          isOpen={showBatchModal}
+          onClose={() => setShowBatchModal(false)}
+          designParams={designParams}
+          onCreateTask={handleCreateTask}
+        />
+      )}
     </Layout>
   );
 }

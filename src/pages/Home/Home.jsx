@@ -167,7 +167,7 @@ const Home = ({ onNavigate }) => {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 animate-fade-in-up">
       {/* Hero Banner */}
       <div className="bg-gray-900 rounded-2xl p-8 text-white">
         <div className="flex items-center justify-between">
@@ -200,7 +200,7 @@ const Home = ({ onNavigate }) => {
           <button
             key={item.key}
             onClick={() => onNavigate(item.page)}
-            className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer"
+            className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm hover:-translate-y-1 transition-all cursor-pointer"
           >
             <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
               <item.icon className="w-5 h-5 text-gray-700" />

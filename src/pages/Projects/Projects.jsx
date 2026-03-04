@@ -88,7 +88,7 @@ const ProjectCard = ({ project, onEdit, onDelete, onDuplicate, onView, onGenerat
 
   return (
     <div
-      className="bg-white rounded-xl border border-gray-200 hover:border-primary-300 hover:shadow-md transition-all duration-200 cursor-pointer"
+      className="bg-white rounded-xl border border-gray-200 hover:border-primary-300 hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-pointer"
       onClick={() => onView?.(project)}
     >
       {/* Cover */}
@@ -241,7 +241,7 @@ const Projects = () => {
   });
 
   return (
-    <div className="p-6">
+    <div className="p-6 animate-fade-in-up">
       {/* Filter Bar */}
       <Card className="mb-6">
         <div className="flex items-center gap-4">

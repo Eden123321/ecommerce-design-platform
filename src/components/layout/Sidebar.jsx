@@ -30,7 +30,7 @@ const menuGroups = [
     title: '工具',
     items: [
       { id: 'models', label: '模型训练', icon: Cpu },
-      { id: 'batch-production', label: '批量生产', icon: Database },
+      { id: 'batch-production', label: '批量任务', icon: Database },
     ]
   },
   {

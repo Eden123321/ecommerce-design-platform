@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Sparkles,
   Upload,
@@ -9,10 +9,9 @@ import {
   Check,
   X,
   Layers,
-  FileText,
-  Plus,
   Clock,
-  ArrowRight,
+  Plus,
+  ArrowLeft,
 } from 'lucide-react';
 import Card from '../../components/common/Card/Card';
 import Button from '../../components/common/Button/Button';
@@ -22,7 +21,6 @@ const mockTasks = [
   {
     id: 1,
     name: '电商主图批量生成',
-    type: 'generate',
     status: 'completed',
     progress: 100,
     imageCount: 20,
@@ -31,23 +29,12 @@ const mockTasks = [
   },
   {
     id: 2,
-    name: '新品海报模板套用',
-    type: 'template',
+    name: '新品海报批量生成',
     status: 'processing',
     progress: 65,
     imageCount: 10,
     createdAt: '2024-01-20 10:15',
     cover: '/images/ecommerce/cce4010d4fc5718774e5a0a2b1c5722c.jpg',
-  },
-  {
-    id: 3,
-    name: '活动Banner批量处理',
-    type: 'process',
-    status: 'pending',
-    progress: 0,
-    imageCount: 0,
-    createdAt: '2024-01-19 16:45',
-    cover: null,
   },
 ];
 
@@ -79,14 +66,6 @@ const aspectRatioOptions = [
   { id: '4:3', label: '4:3' },
 ];
 
-// 模板选项
-const templates = [
-  { id: 'promotion', label: '促销模板' },
-  { id: 'product', label: '商品展示' },
-  { id: 'poster', label: '海报模板' },
-  { id: 'banner', label: 'Banner模板' },
-];
-
 // 模拟已生成的图片数据
 const mockGeneratedImages = [
   { id: 1, image: '/images/ecommerce/c0d3059e7b17365dc32c50a031d62e3f.jpg', time: '10分钟前' },
@@ -114,15 +93,6 @@ const TaskCard = ({ task, onClick }) => {
     );
   };
 
-  const getTypeLabel = () => {
-    const typeMap = {
-      generate: '批量生成',
-      template: '模板套用',
-      process: '批量处理',
-    };
-    return typeMap[task.type] || '未知';
-  };
-
   return (
     <div
       onClick={onClick}
@@ -142,7 +112,7 @@ const TaskCard = ({ task, onClick }) => {
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <h3 className="font-medium text-gray-900 text-sm truncate">{task.name}</h3>
-              <p className="text-xs text-gray-500 mt-0.5">{getTypeLabel()}</p>
+              <p className="text-xs text-gray-500 mt-0.5">批量生成</p>
             </div>
             {getStatusBadge()}
           </div>
@@ -175,87 +145,224 @@ const TaskCard = ({ task, onClick }) => {
   );
 };
 
-// 新建任务弹窗
-const NewTaskModal = ({ isOpen, onClose, onCreateTask }) => {
-  const [taskType, setTaskType] = useState('generate');
+// 批量任务弹窗
+const BatchModal = ({ isOpen, onClose, designParams, onCreateTask }) => {
+  const [taskName, setTaskName] = useState('');
+  const [prompts, setPrompts] = useState([{ id: 1, value: '' }]);
+  const [countPerPrompt, setCountPerPrompt] = useState(1);
+  const [isVisible, setIsVisible] = useState(false);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (isOpen) {
+      setIsVisible(true);
+    }
+  }, [isOpen]);
 
-  const handleCreate = () => {
-    onCreateTask(taskType);
-    onClose();
+  const handleClose = () => {
+    setIsVisible(false);
+    setTimeout(onClose, 200);
+  };
+
+  if (!isOpen && !isVisible) return null;
+
+  // 添加新的文本框
+  const addPrompt = () => {
+    if (prompts.length < 20) {
+      setPrompts([...prompts, { id: Date.now(), value: '' }]);
+    }
+  };
+
+  // 删除文本框
+  const removePrompt = (id) => {
+    if (prompts.length > 1) {
+      setPrompts(prompts.filter(p => p.id !== id));
+    }
+  };
+
+  // 更新单个文本框内容
+  const updatePrompt = (id, value) => {
+    setPrompts(prompts.map(p => p.id === id ? { ...p, value } : p));
+  };
+
+  // 获取有效的提示词数量
+  const validPromptCount = prompts.filter(p => p.value.trim()).length;
+  const totalCount = validPromptCount * countPerPrompt;
+
+  const handleGenerate = () => {
+    const validPrompts = prompts.filter(p => p.value.trim());
+    const totalCount = validPrompts.length * countPerPrompt;
+
+    // 创建新任务
+    onCreateTask({
+      name: taskName || '未命名任务',
+      prompts: validPrompts.map(p => p.value),
+      countPerPrompt,
+      totalCount,
+      industry: designParams?.industry?.label || '未选择',
+      style: designParams?.style?.label || '未选择',
+      ratio: designParams?.ratio || '1:1',
+      baseModel: designParams?.baseModel?.label || '未选择',
+      imageCount: totalCount,
+    });
   };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+      <div
+        className={`fixed inset-0 bg-black/50 transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+        onClick={handleClose}
+      />
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-md bg-white rounded-xl shadow-xl">
+        <div className={`relative w-full max-w-4xl bg-white rounded-xl shadow-xl transition-all duration-200 ${isVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
+          {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-900">新建任务</h3>
+            <h3 className="text-lg font-semibold text-gray-900">批量生成</h3>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
             >
               ×
             </button>
           </div>
-          <div className="p-4">
-            <p className="text-sm text-gray-600 mb-3">选择任务类型</p>
-            <div className="space-y-2">
-              <button
-                onClick={() => setTaskType('generate')}
-                className={`w-full p-3 rounded-lg border text-left transition-all cursor-pointer ${
-                  taskType === 'generate'
-                    ? 'border-primary-500 bg-primary-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Sparkles className="w-5 h-5 text-primary-600" />
-                  <div>
-                    <div className="font-medium text-gray-900">批量生成</div>
-                    <div className="text-xs text-gray-500">输入多个提示词批量生成图片</div>
-                  </div>
+
+          {/* Content */}
+          <div className="flex">
+            {/* 左侧：参数选择 */}
+            <div className="w-64 p-4 border-r border-gray-100 space-y-4">
+              <h4 className="text-sm font-bold text-gray-700">使用参数</h4>
+
+              {/* 模型选择 */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">模型</label>
+                <div className="px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-700">
+                  {designParams?.baseModel?.label || '未选择'}
                 </div>
-              </button>
-              <button
-                onClick={() => setTaskType('template')}
-                className={`w-full p-3 rounded-lg border text-left transition-all cursor-pointer ${
-                  taskType === 'template'
-                    ? 'border-primary-500 bg-primary-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-primary-600" />
-                  <div>
-                    <div className="font-medium text-gray-900">模板套用</div>
-                    <div className="text-xs text-gray-500">选择模板批量套用到产品图</div>
-                  </div>
+              </div>
+
+              {/* 行业选择 */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">行业</label>
+                <div className="px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-700">
+                  {designParams?.industry?.label || '未选择'}
                 </div>
-              </button>
-              <button
-                onClick={() => setTaskType('process')}
-                className={`w-full p-3 rounded-lg border text-left transition-all cursor-pointer ${
-                  taskType === 'process'
-                    ? 'border-primary-500 bg-primary-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Image className="w-5 h-5 text-primary-600" />
-                  <div>
-                    <div className="font-medium text-gray-900">批量处理</div>
-                    <div className="text-xs text-gray-500">对已生成的图片批量处理</div>
-                  </div>
+              </div>
+
+              {/* 风格选择 */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">风格</label>
+                <div className="px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-700">
+                  {designParams?.style?.label || '未选择'}
                 </div>
-              </button>
+              </div>
+
+              {/* 比例选择 */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">比例</label>
+                <div className="px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-700">
+                  {designParams?.ratio || '1:1'}
+                </div>
+              </div>
+            </div>
+
+            {/* 中间：输入区域 */}
+            <div className="flex-1 p-4 border-r border-gray-100 overflow-y-auto" style={{ maxHeight: '400px' }}>
+              {/* 任务名称 */}
+              <div className="mb-4">
+                <label className="block text-sm font-bold text-gray-700 mb-2">任务名称</label>
+                <input
+                  type="text"
+                  value={taskName}
+                  onChange={(e) => setTaskName(e.target.value)}
+                  placeholder="输入任务名称..."
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all"
+                />
+              </div>
+
+              {/* 每张生成数量 */}
+              <div className="mb-4">
+                <label className="block text-sm font-bold text-gray-700 mb-2">每张生成数量</label>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCountPerPrompt(Math.max(1, countPerPrompt - 1))}
+                    className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 cursor-pointer text-base"
+                  >
+                    -
+                  </button>
+                  <span className="w-12 text-center font-medium text-gray-900">{countPerPrompt}</span>
+                  <button
+                    onClick={() => setCountPerPrompt(Math.min(10, countPerPrompt + 1))}
+                    className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 cursor-pointer text-base"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* 提示词输入 - 多个独立输入框 */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-bold text-gray-700">输入提示词</label>
+                  <button
+                    onClick={addPrompt}
+                    className="flex items-center gap-1 px-2 py-1 text-xs text-primary-600 hover:bg-primary-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" /> 添加
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {prompts.map((prompt, index) => (
+                    <div key={prompt.id} className="flex items-start gap-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-1 mb-1">
+                          <span className="text-xs text-gray-400">提示词 {index + 1}</span>
+                        </div>
+                        <textarea
+                          value={prompt.value}
+                          onChange={(e) => updatePrompt(prompt.id, e.target.value)}
+                          placeholder="请输入提示词..."
+                          className="w-full h-20 px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all resize-none"
+                        />
+                      </div>
+                      {prompts.length > 1 && (
+                        <button
+                          onClick={() => removePrompt(prompt.id)}
+                          className="mt-6 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+
+            {/* 右侧：确认区域 */}
+            <div className="w-48 p-4 bg-gray-50">
+              <h4 className="text-sm font-bold text-gray-700 mb-3">确认信息</h4>
+
+              <div className="space-y-3">
+                <div className="bg-white p-3 rounded-lg border border-gray-200">
+                  <div className="text-xs text-gray-500 mb-1">提示词数量</div>
+                  <div className="text-sm font-medium text-gray-900">{validPromptCount} 个</div>
+                </div>
+
+                <div className="bg-white p-3 rounded-lg border border-gray-200">
+                  <div className="text-xs text-gray-500 mb-1">总计生成</div>
+                  <div className="text-lg font-bold text-primary-600">{totalCount} 张</div>
+                </div>
+              </div>
             </div>
           </div>
+
+          {/* Footer */}
           <div className="p-4 border-t border-gray-100 flex justify-end gap-2">
-            <Button variant="secondary" onClick={onClose}>取消</Button>
-            <Button variant="primary" onClick={handleCreate}>创建任务</Button>
+            <Button variant="secondary" onClick={handleClose}>取消</Button>
+            <Button variant="primary" onClick={handleGenerate} leftIcon={<Sparkles className="w-4 h-4" />}>
+              开始生成
+            </Button>
           </div>
         </div>
       </div>
@@ -263,20 +370,10 @@ const NewTaskModal = ({ isOpen, onClose, onCreateTask }) => {
   );
 };
 
-// 任务详情页面（原来的批量生产功能）
-const TaskDetail = ({ task, onBack }) => {
-  const [activeTab, setActiveTab] = useState(task.type || 'generate');
+// 批量任务页面 - 任务列表
+const BatchProduction = ({ onNavigate, tasks = [] }) => {
+  const [selectedTask, setSelectedTask] = useState(null); // 当前选中的任务
   const [selectedImages, setSelectedImages] = useState([]);
-  const [batchPrompts, setBatchPrompts] = useState('');
-  const [selectedIndustry, setSelectedIndustry] = useState(null);
-  const [selectedStyle, setSelectedStyle] = useState(null);
-  const [selectedRatio, setSelectedRatio] = useState('1:1');
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [productImages, setProductImages] = useState([]);
-
-  const fileInputRef = useRef(null);
-
-  const handlePromptChange = (e) => setBatchPrompts(e.target.value);
 
   const toggleImageSelect = (id) => {
     setSelectedImages(prev =>
@@ -287,374 +384,137 @@ const TaskDetail = ({ task, onBack }) => {
   const selectAll = () => setSelectedImages(mockGeneratedImages.map(img => img.id));
   const deselectAll = () => setSelectedImages([]);
 
-  const handleProductImageUpload = (e) => {
-    const files = Array.from(e.target.files);
-    const newImages = files.map(file => ({
-      id: Date.now() + Math.random(),
-      file,
-      preview: URL.createObjectURL(file)
-    }));
-    setProductImages(prev => [...prev, ...newImages].slice(0, 20));
-  };
+  // 任务列表视图
+  const renderTaskList = () => (
+    <div className="space-y-3">
+      {tasks.map((task) => (
+        <TaskCard key={task.id} task={task} onClick={() => setSelectedTask(task)} />
+      ))}
+      {tasks.length === 0 && (
+        <Card className="py-12">
+          <div className="text-center">
+            <Layers className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-1">暂无任务</h3>
+            <p className="text-sm text-gray-500">在AI设计页面点击批量任务开始生成</p>
+          </div>
+        </Card>
+      )}
+    </div>
+  );
 
-  const removeProductImage = (id) => {
-    setProductImages(prev => prev.filter(img => img.id !== id));
-  };
+  // 任务详情视图 - 显示该任务生成的图片
+  const renderTaskDetail = () => (
+    <div>
+      {/* 第一行：返回按钮 */}
+      <div className="mb-3">
+        <button
+          onClick={() => setSelectedTask(null)}
+          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          返回任务列表
+        </button>
+      </div>
 
-  // 根据任务类型确定默认Tab
-  const getDefaultTab = () => {
-    const typeMap = { generate: 'generate', template: 'template', process: 'process' };
-    return typeMap[task.type] || 'generate';
-  };
+      {/* 第二行：任务信息 */}
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h3 className="text-lg font-medium text-gray-900">{selectedTask?.name}</h3>
+          <p className="text-sm text-gray-500">{selectedTask?.createdAt} · {selectedTask?.imageCount}张图片</p>
+        </div>
+        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+          selectedTask?.status === 'completed' ? 'bg-green-100 text-green-700' :
+          selectedTask?.status === 'processing' ? 'bg-blue-100 text-blue-700' :
+          'bg-gray-100 text-gray-700'
+        }`}>
+          {selectedTask?.status === 'completed' ? '已完成' : selectedTask?.status === 'processing' ? '处理中' : '等待中'}
+        </span>
+      </div>
+
+      {/* 第三行：进度条（处理中时显示） */}
+      {selectedTask?.status === 'processing' && (
+        <div className="mb-4">
+          <div className="flex items-center justify-between text-sm mb-1">
+            <span className="text-gray-500">生成进度</span>
+            <span className="text-primary-600 font-medium">{selectedTask?.progress}%</span>
+          </div>
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-primary-600 rounded-full transition-all"
+              style={{ width: `${selectedTask?.progress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 图片区域 - 包含操作栏 */}
+      <Card>
+        {/* 操作栏 */}
+        {selectedTask?.status === 'completed' && (
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <button onClick={selectAll} className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors cursor-pointer">全选</button>
+              <span className="text-gray-300">|</span>
+              <button onClick={deselectAll} className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors cursor-pointer">取消</button>
+            </div>
+            {selectedImages.length > 0 && (
+              <div className="flex gap-2">
+                <button className="flex items-center justify-center gap-1 px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
+                  <Download className="w-4 h-4" />下载
+                </button>
+                <button className="flex items-center justify-center gap-1 px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
+                  <Trash2 className="w-4 h-4" />删除
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 图片网格 */}
+        {selectedTask?.status === 'completed' ? (
+          <div className="grid grid-cols-4 gap-4">
+            {mockGeneratedImages.map((img) => (
+              <div
+                key={img.id}
+                onClick={() => toggleImageSelect(img.id)}
+                className={`relative aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer transition-all ${
+                  selectedImages.includes(img.id) ? 'ring-2 ring-primary-600' : 'hover:ring-2 hover:ring-gray-300'
+                }`}
+              >
+                <img src={img.image} alt="已生成" className="w-full h-full object-cover" />
+                {selectedImages.includes(img.id) && (
+                  <div className="absolute inset-0 bg-primary-600/20 flex items-center justify-center">
+                    <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
+                      <Check className="w-5 h-5 text-white" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : selectedTask?.status === 'processing' ? (
+          <div className="py-12 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+            <p className="text-gray-500">正在生成图片...</p>
+          </div>
+        ) : (
+          <div className="py-12 text-center">
+            <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">等待生成</p>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
 
   return (
     <div className="p-6">
-      {/* 返回按钮 */}
-      <button
-        onClick={onBack}
-        className="flex items-center gap-2 px-4 py-2 mb-4 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors cursor-pointer"
-      >
-        <ArrowRight className="w-4 h-4 rotate-180" />
-        返回任务列表
-      </button>
-
-      {/* Tab 切换 */}
-      <Card className="mb-4">
-        <div className="flex items-center gap-4">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setActiveTab('generate')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                activeTab === 'generate' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              批量生成
-            </button>
-            <button
-              onClick={() => setActiveTab('process')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                activeTab === 'process' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              批量处理
-            </button>
-            <button
-              onClick={() => setActiveTab('template')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                activeTab === 'template' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              模板套用
-            </button>
-          </div>
-        </div>
-      </Card>
-
-      {/* 内容区域 */}
-      <div className="flex gap-6">
-        {/* 左侧输入区域 */}
-        <div className="w-[480px] flex-shrink-0">
-          <Card className="h-full">
-            <div className="flex flex-col h-full">
-              <div className="space-y-6 flex-1 overflow-auto pr-4 scrollbar-thin">
-                {activeTab === 'generate' && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">批量输入提示词</label>
-                      <textarea
-                        value={batchPrompts}
-                        onChange={handlePromptChange}
-                        placeholder="每行一个提示词，支持批量生成..."
-                        rows={10}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all resize-none"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">每行一个提示词，最多支持20个</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">选择行业</label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {industries.map((industry) => (
-                          <button
-                            key={industry.id}
-                            onClick={() => setSelectedIndustry(industry)}
-                            className={`px-3 py-2.5 rounded-lg border text-sm font-medium transition-all cursor-pointer ${
-                              selectedIndustry?.id === industry.id
-                                ? 'bg-primary-50 border-primary-200 text-primary-700'
-                                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
-                            }`}
-                          >
-                            {industry.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">选择风格</label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {styleOptions.map((style) => (
-                          <button
-                            key={style.id}
-                            onClick={() => setSelectedStyle(style)}
-                            className={`px-3 py-2.5 rounded-lg border text-sm font-medium transition-all cursor-pointer ${
-                              selectedStyle?.id === style.id
-                                ? 'bg-primary-50 border-primary-200 text-primary-700'
-                                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
-                            }`}
-                          >
-                            {style.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">图片比例</label>
-                      <div className="grid grid-cols-4 gap-2">
-                        {aspectRatioOptions.map((ratio) => (
-                          <button
-                            key={ratio.id}
-                            onClick={() => setSelectedRatio(ratio.id)}
-                            className={`px-3 py-2.5 rounded-lg border text-sm font-medium transition-all cursor-pointer ${
-                              selectedRatio === ratio.id
-                                ? 'bg-primary-50 border-primary-200 text-primary-700'
-                                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
-                            }`}
-                          >
-                            {ratio.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {activeTab === 'process' && (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Image className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-1">批量处理</h3>
-                    <p className="text-sm text-gray-500 mb-4">选择已生成的图片进行批量操作</p>
-                    <div className="flex items-center justify-center gap-2 mb-4">
-                      <button onClick={selectAll} className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors cursor-pointer">全选</button>
-                      <span className="text-gray-300">|</span>
-                      <button onClick={deselectAll} className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors cursor-pointer">取消全选</button>
-                    </div>
-                    <p className="text-sm text-gray-500">已选择 {selectedImages.length} 张图片</p>
-                  </div>
-                )}
-
-                {activeTab === 'template' && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">选择模板</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {templates.map((template) => (
-                          <button
-                            key={template.id}
-                            onClick={() => setSelectedTemplate(template)}
-                            className={`px-3 py-2.5 rounded-lg border text-sm font-medium transition-all cursor-pointer ${
-                              selectedTemplate?.id === template.id
-                                ? 'bg-primary-50 border-primary-200 text-primary-700'
-                                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
-                            }`}
-                          >
-                            {template.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">
-                        批量上传产品图 <span className="text-gray-400 font-normal">(最多20张)</span>
-                      </label>
-                      <div
-                        onClick={() => fileInputRef.current?.click()}
-                        className="border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center py-8 cursor-pointer hover:border-primary-400 hover:bg-primary-50/50 transition-all"
-                      >
-                        <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                        <span className="text-sm text-gray-500">点击或拖拽上传产品图</span>
-                        <span className="text-xs text-gray-400 mt-1">支持 JPG、PNG 格式</span>
-                      </div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleProductImageUpload}
-                        className="hidden"
-                      />
-                      {productImages.length > 0 && (
-                        <div className="mt-4">
-                          <p className="text-sm text-gray-500 mb-2">已上传 {productImages.length} 张图片</p>
-                          <div className="grid grid-cols-4 gap-2">
-                            {productImages.map((img) => (
-                              <div key={img.id} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                                <img src={img.preview} alt="产品图" className="w-full h-full object-cover" />
-                                <button onClick={() => removeProductImage(img.id)} className="absolute top-1 right-1 p-1 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors">
-                                  <X className="w-3 h-3" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">统一参数</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button className="px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">电商行业</button>
-                        <button className="px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">现代风格</button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* 底部按钮 */}
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                {activeTab === 'generate' && (
-                  <button className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 cursor-pointer bg-gradient-to-r from-primary-600 to-primary-600 text-white hover:from-primary-700 hover:to-primary-700 shadow-lg shadow-primary-500/25">
-                    <Sparkles className="w-5 h-5" />
-                    批量生成
-                  </button>
-                )}
-                {activeTab === 'process' && (
-                  <div className="grid grid-cols-3 gap-2">
-                    <button className="flex items-center justify-center gap-2 px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
-                      <Download className="w-4 h-4" />批量下载
-                    </button>
-                    <button className="flex items-center justify-center gap-2 px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
-                      <Trash2 className="w-4 h-4" />批量删除
-                    </button>
-                    <button className="flex items-center justify-center gap-2 px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
-                      <RotateCcw className="w-4 h-4" />重新生成
-                    </button>
-                  </div>
-                )}
-                {activeTab === 'template' && (
-                  <button className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 cursor-pointer bg-gradient-to-r from-primary-600 to-primary-600 text-white hover:from-primary-700 hover:to-primary-700 shadow-lg shadow-primary-500/25">
-                    <Sparkles className="w-5 h-5" />
-                    开始批量生成
-                  </button>
-                )}
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* 右侧结果展示 */}
-        <div className="flex-1">
-          <Card className="h-full overflow-auto">
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                {activeTab === 'generate' && <Layers className="w-8 h-8 text-gray-400" />}
-                {activeTab === 'process' && <Image className="w-8 h-8 text-gray-400" />}
-                {activeTab === 'template' && <FileText className="w-8 h-8 text-gray-400" />}
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-1">
-                {activeTab === 'generate' && '批量生成结果'}
-                {activeTab === 'process' && '已生成的图片'}
-                {activeTab === 'template' && '模板套用结果'}
-              </h3>
-              <p className="text-sm text-gray-500">
-                {activeTab === 'generate' && '生成的图片将在这里展示'}
-                {activeTab === 'process' && '选择图片后可进行批量操作'}
-                {activeTab === 'template' && '批量生成的图片将在这里展示'}
-              </p>
-            </div>
-            {activeTab === 'process' && (
-              <div className="grid grid-cols-4 gap-4 p-4">
-                {mockGeneratedImages.map((img) => (
-                  <div
-                    key={img.id}
-                    onClick={() => toggleImageSelect(img.id)}
-                    className={`relative aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer transition-all ${
-                      selectedImages.includes(img.id) ? 'ring-2 ring-primary-600' : 'hover:ring-2 hover:ring-gray-300'
-                    }`}
-                  >
-                    <img src={img.image} alt="已生成" className="w-full h-full object-cover" />
-                    {selectedImages.includes(img.id) && (
-                      <div className="absolute inset-0 bg-primary-600/20 flex items-center justify-center">
-                        <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
-                          <Check className="w-5 h-5 text-white" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        </div>
-      </div>
+      {selectedTask ? renderTaskDetail() : renderTaskList()}
     </div>
   );
 };
 
-// 主组件
-const BatchProduction = ({ onNavigate, showNewTaskModal, setShowNewTaskModal }) => {
-  const [tasks, setTasks] = useState(mockTasks);
-  const [selectedTask, setSelectedTask] = useState(null);
-
-  // 创建新任务
-  const handleCreateTask = (type) => {
-    const typeLabels = { generate: '批量生成', template: '模板套用', process: '批量处理' };
-    const newTask = {
-      id: Date.now(),
-      name: `${typeLabels[type] || '新任务'}`,
-      type,
-      status: 'pending',
-      progress: 0,
-      imageCount: 0,
-      createdAt: new Date().toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
-      cover: null,
-    };
-    setTasks([newTask, ...tasks]);
-    setSelectedTask(newTask);
-  };
-
-  // 关闭弹窗
-  const handleCloseModal = () => {
-    setShowNewTaskModal(false);
-  };
-
-  // 任务列表视图
-  if (!selectedTask) {
-    return (
-      <div className="p-6">
-
-        {/* 任务列表 */}
-        <div className="space-y-3">
-          {tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onClick={() => setSelectedTask(task)}
-            />
-          ))}
-          {tasks.length === 0 && (
-            <Card className="py-12">
-              <div className="text-center">
-                <Layers className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-1">暂无任务</h3>
-                <p className="text-sm text-gray-500">点击上方按钮创建新任务</p>
-              </div>
-            </Card>
-          )}
-        </div>
-
-        {/* 新建任务弹窗 */}
-        <NewTaskModal
-          isOpen={showNewTaskModal}
-          onClose={() => setShowNewTaskModal(false)}
-          onCreateTask={handleCreateTask}
-        />
-      </div>
-    );
-  }
-
-  // 任务详情视图
-  return <TaskDetail task={selectedTask} onBack={() => setSelectedTask(null)} />;
-};
+// 导出弹窗组件
+BatchProduction.Modal = BatchModal;
 
 export default BatchProduction;
