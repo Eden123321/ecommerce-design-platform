@@ -386,9 +386,11 @@ const BatchProduction = ({ onNavigate, tasks = [] }) => {
 
   // 任务列表视图
   const renderTaskList = () => (
-    <div className="space-y-3">
+    <div className="space-y-3 animate-fade-in-up">
       {tasks.map((task) => (
-        <TaskCard key={task.id} task={task} onClick={() => setSelectedTask(task)} />
+        <div key={task.id} className="animate-fade-in-up" style={{ animationDelay: `${task.id * 0.05}s` }}>
+          <TaskCard task={task} onClick={() => setSelectedTask(task)} />
+        </div>
       ))}
       {tasks.length === 0 && (
         <Card className="py-12">
@@ -404,7 +406,7 @@ const BatchProduction = ({ onNavigate, tasks = [] }) => {
 
   // 任务详情视图 - 显示该任务生成的图片
   const renderTaskDetail = () => (
-    <div>
+    <div className="animate-fade-in-up">
       {/* 第一行：返回按钮 */}
       <div className="mb-3">
         <button
@@ -473,13 +475,14 @@ const BatchProduction = ({ onNavigate, tasks = [] }) => {
         {/* 图片网格 */}
         {selectedTask?.status === 'completed' ? (
           <div className="grid grid-cols-4 gap-4">
-            {mockGeneratedImages.map((img) => (
+            {mockGeneratedImages.map((img, index) => (
               <div
                 key={img.id}
                 onClick={() => toggleImageSelect(img.id)}
-                className={`relative aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer transition-all ${
+                className={`relative aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer transition-all animate-fade-in-up ${
                   selectedImages.includes(img.id) ? 'ring-2 ring-primary-600' : 'hover:ring-2 hover:ring-gray-300'
                 }`}
+                style={{ animationDelay: `${index * 0.03}s` }}
               >
                 <img src={img.image} alt="已生成" className="w-full h-full object-cover" />
                 {selectedImages.includes(img.id) && (
@@ -508,7 +511,7 @@ const BatchProduction = ({ onNavigate, tasks = [] }) => {
   );
 
   return (
-    <div className="p-6">
+    <div className="p-6 animate-fade-in-up">
       {selectedTask ? renderTaskDetail() : renderTaskList()}
     </div>
   );

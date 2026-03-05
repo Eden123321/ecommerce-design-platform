@@ -8,6 +8,7 @@ import Templates from './pages/Templates/Templates';
 import Models from './pages/Models/Models';
 import LoraTraining from './pages/LoraTraining/LoraTraining';
 import BatchProduction from './pages/BatchProduction/BatchProduction';
+import Profile from './pages/Profile/Profile';
 import Button from './components/common/Button/Button';
 
 function App() {
@@ -73,8 +74,7 @@ function App() {
     models: '模型库',
     'lora-training': '模型训练',
     'batch-production': '批量任务',
-    logs: '日志',
-    settings: '设置',
+    profile: '个人中心',
   };
 
   // 右侧内容（根据页面动态显示）
@@ -140,22 +140,8 @@ function App() {
         return <LoraTraining onNavigate={setActivePage} />;
       case 'batch-production':
         return <BatchProduction onNavigate={setActivePage} tasks={tasks} />;
-      case 'logs':
-        return (
-          <div className="p-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-              <p className="text-gray-500">日志功能开发中...</p>
-            </div>
-          </div>
-        );
-      case 'settings':
-        return (
-          <div className="p-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-              <p className="text-gray-500">设置功能开发中...</p>
-            </div>
-          </div>
-        );
+      case 'profile':
+        return <Profile />;
       default:
         return (
           <div className="p-6">

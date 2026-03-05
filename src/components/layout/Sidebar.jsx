@@ -5,10 +5,9 @@ import {
   FileText,
   Database,
   Cpu,
-  List,
-  Settings,
   Palette,
-  Sparkles
+  Sparkles,
+  User
 } from 'lucide-react';
 
 const menuGroups = [
@@ -31,13 +30,6 @@ const menuGroups = [
     items: [
       { id: 'models', label: '模型训练', icon: Cpu },
       { id: 'batch-production', label: '批量任务', icon: Database },
-    ]
-  },
-  {
-    title: '系统',
-    items: [
-      { id: 'logs', label: '日志', icon: List },
-      { id: 'settings', label: '设置', icon: Settings },
     ]
   }
 ];
@@ -84,6 +76,24 @@ const Sidebar = ({ activePage, onNavigate }) => {
             </div>
           </div>
         ))}
+
+        {/* 个人中心 */}
+        <div>
+          <div className="px-3 mb-2 text-xs font-medium text-gray-400 uppercase tracking-wider">
+            个人中心
+          </div>
+          <button
+            onClick={() => onNavigate('profile')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
+              activePage === 'profile'
+                ? 'bg-gray-100 text-gray-900'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+          >
+            <User className="w-5 h-5" />
+            <span className="text-sm font-medium">个人中心</span>
+          </button>
+        </div>
       </nav>
     </aside>
   );

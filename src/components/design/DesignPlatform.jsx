@@ -145,6 +145,18 @@ const generateHistory = [
   { id: 3, industry: '服装', style: '现代', time: '1小时前', status: 'success' },
 ];
 
+// LoRA模型选项 - 从模型库获取
+const loraOptions = [
+  { id: 1, name: '电商主图通用风格', baseModel: 'SDXL' },
+  { id: 2, name: '促销活动Banner', baseModel: 'Flux2-Kein' },
+  { id: 3, name: '高端品牌Logo', baseModel: 'Qwen2511' },
+  { id: 4, name: '活动海报风格', baseModel: 'SDXL' },
+  { id: 5, name: '社交媒体封面', baseModel: 'Flux2-Kein' },
+  { id: 6, name: 'Banner广告模板', baseModel: 'Qwen2509' },
+  { id: 7, name: '美妆产品展示', baseModel: 'SDXL' },
+  { id: 8, name: '品牌VI设计', baseModel: 'Flux2-Kein' },
+];
+
 // 下拉选择器组件
 const DropdownSelector = ({ label, selected, options, onSelect, icon: Icon }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -310,6 +322,8 @@ const aspectRatioOptions = [
 
 const DesignPlatform = ({ designParams, setDesignParams, onOpenBatchModal }) => {
   const [selectedBaseModel, setSelectedBaseModel] = useState(baseModels[0]); // 默认选择第一个底模
+  const [selectedLora, setSelectedLora] = useState({ id: 'none', name: '不使用lora', baseModel: '' }); // 选中的LoRA
+  const [loraDropdownOpen, setLoraDropdownOpen] = useState(false); // LoRA下拉框状态
   const [selectedTemplate, setSelectedTemplate] = useState(designTemplates[0]); // 默认选择第一个模板
   const [templateDropdownOpen, setTemplateDropdownOpen] = useState(false); // 设计模板下拉框状态
   const [baseModelDropdownOpen, setBaseModelDropdownOpen] = useState(false); // 底模下拉框状态
@@ -358,6 +372,8 @@ const DesignPlatform = ({ designParams, setDesignParams, onOpenBatchModal }) => 
   const fileInputRef = useRef(null);
   const productImageInputRef = useRef(null);
   const templateDropdownRef = useRef(null);
+  const loraDropdownRef = useRef(null);
+  const baseModelDropdownRef = useRef(null);
 
   // 初始化时从 designParams 填充值（只有当值不同时才更新）
   const initKey = useRef(0);
@@ -420,6 +436,12 @@ const DesignPlatform = ({ designParams, setDesignParams, onOpenBatchModal }) => 
     const handleClickOutside = (event) => {
       if (templateDropdownRef.current && !templateDropdownRef.current.contains(event.target)) {
         setTemplateDropdownOpen(false);
+      }
+      if (loraDropdownRef.current && !loraDropdownRef.current.contains(event.target)) {
+        setLoraDropdownOpen(false);
+      }
+      if (baseModelDropdownRef.current && !baseModelDropdownRef.current.contains(event.target)) {
+        setBaseModelDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -643,7 +665,7 @@ const DesignPlatform = ({ designParams, setDesignParams, onOpenBatchModal }) => 
                 {/* 模型选择 - 独立下拉框 */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">模型</label>
-                  <div className="relative">
+                  <div className="relative" ref={baseModelDropdownRef}>
                     <button
                       onClick={() => {
                         setBaseModelDropdownOpen(!baseModelDropdownOpen);
@@ -670,6 +692,61 @@ const DesignPlatform = ({ designParams, setDesignParams, onOpenBatchModal }) => 
                           `}
                         >
                           {model.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* LoRA选择 */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    LoRA <span className="text-gray-400 font-normal text-xs">(可选)</span>
+                  </label>
+                  <div className="relative" ref={loraDropdownRef}>
+                    <button
+                      onClick={() => {
+                        setLoraDropdownOpen(!loraDropdownOpen);
+                        if (!loraDropdownOpen) {
+                          setBaseModelDropdownOpen(false);
+                          setTemplateDropdownOpen(false);
+                        }
+                      }}
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-left flex items-center justify-between hover:border-gray-300 transition-colors cursor-pointer"
+                    >
+                      <span className="text-sm font-medium text-gray-700">
+                        {selectedLora ? selectedLora.name : '选择LoRA模型'}
+                      </span>
+                      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${loraDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    <div className={`absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 transition-all duration-150 origin-top max-h-60 overflow-y-auto ${loraDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
+                      {/* 不选择LoRA的选项 */}
+                      <button
+                        onClick={() => {
+                          setSelectedLora({ id: 'none', name: '不使用lora', baseModel: '' });
+                          setLoraDropdownOpen(false);
+                        }}
+                        className={`
+                          w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 transition-colors cursor-pointer
+                          ${selectedLora?.id === 'none' ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-700'}
+                        `}
+                      >
+                        不使用LoRA
+                      </button>
+                      {loraOptions.map((lora) => (
+                        <button
+                          key={lora.id}
+                          onClick={() => {
+                            setSelectedLora(lora);
+                            setLoraDropdownOpen(false);
+                          }}
+                          className={`
+                            w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 transition-colors cursor-pointer flex items-center justify-between
+                            ${selectedLora?.id === lora.id ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-700'}
+                          `}
+                        >
+                          <span>{lora.name}</span>
+                          <span className="text-xs text-gray-400">{lora.baseModel}</span>
                         </button>
                       ))}
                     </div>
