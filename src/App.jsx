@@ -8,7 +8,6 @@ import Templates from './pages/Templates/Templates';
 import Models from './pages/Models/Models';
 import LoraTraining from './pages/LoraTraining/LoraTraining';
 import BatchProduction from './pages/BatchProduction/BatchProduction';
-import Datasets from './pages/Datasets/Datasets';
 import Button from './components/common/Button/Button';
 
 function App() {
@@ -74,7 +73,6 @@ function App() {
     models: '模型库',
     'lora-training': '模型训练',
     'batch-production': '批量任务',
-    datasets: '测评集',
     logs: '日志',
     settings: '设置',
   };
@@ -131,7 +129,7 @@ function App() {
       case 'home':
         return <Home onNavigate={setActivePage} />;
       case 'projects':
-        return <Projects />;
+        return <Projects onNavigate={setActivePage} setDesignParams={setDesignParams} />;
       case 'templates':
         return <Templates />;
       case 'design-platform':
@@ -142,8 +140,6 @@ function App() {
         return <LoraTraining onNavigate={setActivePage} />;
       case 'batch-production':
         return <BatchProduction onNavigate={setActivePage} tasks={tasks} />;
-      case 'datasets':
-        return <Datasets />;
       case 'logs':
         return (
           <div className="p-6">

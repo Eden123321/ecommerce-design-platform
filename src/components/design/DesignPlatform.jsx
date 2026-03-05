@@ -15,6 +15,7 @@ import {
   Upload,
   FileImage,
   Layers,
+  Save,
 } from 'lucide-react';
 import Card from '../common/Card/Card';
 import Badge from '../common/Badge/Badge';
@@ -323,6 +324,33 @@ const DesignPlatform = ({ designParams, setDesignParams, onOpenBatchModal }) => 
   const [stage, setStage] = useState('');
   const [generatedResult, setGeneratedResult] = useState(null);
   const [rightTab, setRightTab] = useState('result'); // 'result' | 'history'
+  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+
+  // 保存为模板
+  const handleSaveAsTemplate = () => {
+    if (!templateName.trim()) return;
+
+    // 创建新模板
+    const newTemplate = {
+      id: `custom-${Date.now()}`,
+      label: templateName,
+      type: 'smart',
+      preset: {
+        baseModel: selectedBaseModel?.id || 'flux2-kein',
+        prompt: prompt,
+        industry: selectedIndustry?.id || 'ecommerce',
+        style: selectedStyle?.id || 'modern',
+        ratio: selectedAspectRatio,
+      }
+    };
+
+    // 这里可以保存到父组件或本地存储
+    console.log('保存模板:', newTemplate);
+    setShowSaveTemplateModal(false);
+    setTemplateName('');
+    alert('模板保存成功！');
+  };
 
   // 判断当前是否需要显示图片上传区域
   const shouldShowImageUpload = selectedTemplate?.type === 'image2image' ||
@@ -331,21 +359,61 @@ const DesignPlatform = ({ designParams, setDesignParams, onOpenBatchModal }) => 
   const productImageInputRef = useRef(null);
   const templateDropdownRef = useRef(null);
 
-  // 同步 designParams 到父组件
+  // 初始化时从 designParams 填充值（只有当值不同时才更新）
+  const initKey = useRef(0);
   useEffect(() => {
-    if (setDesignParams) {
-      setDesignParams({
-        industry: selectedIndustry,
-        style: selectedStyle,
-        ratio: selectedAspectRatio,
-        baseModel: selectedBaseModel,
-        template: selectedTemplate,
-        prompt: prompt,
-        referenceImage: referenceImage,
-        productImage: productImage,
-      });
+    if (designParams) {
+      // 用递增的key来确保初始化只执行一次
+      initKey.current += 1;
+      const currentKey = initKey.current;
+
+      // 使用 setTimeout 延迟执行，确保在同步 effect 之前运行
+      const timer = setTimeout(() => {
+        // 只在 key 没有变化时才更新（确保是同一次初始化）
+        if (initKey.current === currentKey) {
+          if (designParams.baseModel) {
+            setSelectedBaseModel(designParams.baseModel);
+          }
+          if (designParams.industry) {
+            setSelectedIndustry(designParams.industry);
+          }
+          if (designParams.style) {
+            setSelectedStyle(designParams.style);
+          }
+          if (designParams.ratio) {
+            setSelectedAspectRatio(designParams.ratio);
+          }
+          if (designParams.template) {
+            setSelectedTemplate(designParams.template);
+          }
+        }
+      }, 0);
+
+      return () => clearTimeout(timer);
     }
-  }, [selectedIndustry, selectedStyle, selectedAspectRatio, selectedBaseModel, selectedTemplate, prompt, referenceImage, productImage]);
+  }, [designParams]);
+
+  // 同步 designParams 到父组件 - 使用延迟避免循环
+  const isInitialSync = useRef(true);
+  useEffect(() => {
+    // 延迟同步，避免初始化时的循环
+    const timer = setTimeout(() => {
+      isInitialSync.current = false;
+      if (setDesignParams) {
+        setDesignParams({
+          industry: selectedIndustry,
+          style: selectedStyle,
+          ratio: selectedAspectRatio,
+          baseModel: selectedBaseModel,
+          template: selectedTemplate,
+          prompt: prompt,
+          referenceImage: referenceImage,
+          productImage: productImage,
+        });
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [selectedIndustry, selectedStyle, selectedAspectRatio, selectedBaseModel, selectedTemplate, prompt, referenceImage, productImage, setDesignParams]);
 
   // 点击外部关闭下拉框
   useEffect(() => {
@@ -834,19 +902,19 @@ const DesignPlatform = ({ designParams, setDesignParams, onOpenBatchModal }) => 
               <div className="flex-1 flex items-center justify-center">
                 {generatedResult ? (
                   <div className="text-center">
-                    <div className="w-64 h-64 bg-gradient-to-br from-primary-100 to-primary-200 rounded-xl mx-auto mb-4 flex items-center justify-center">
+                    <div className="w-64 h-64 bg-gradient-to-br from-primary-100 to-primary-200 rounded-xl mx-auto mb-4 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform">
                       <Image className="w-20 h-20 text-primary-600" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      {selectedIndustry?.label} - {selectedStyle?.label}
-                    </h3>
-                    <p className="text-sm text-gray-500 mb-4">生成成功！</p>
                     <div className="flex items-center justify-center gap-3">
-                      <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors cursor-pointer">
-                        查看详情
-                      </button>
                       <button className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700 transition-colors cursor-pointer">
                         下载图片
+                      </button>
+                      <button
+                        onClick={() => setShowSaveTemplateModal(true)}
+                        className="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2"
+                      >
+                        <Save className="w-4 h-4" />
+                        保存为模板
                       </button>
                     </div>
                   </div>
@@ -895,6 +963,80 @@ const DesignPlatform = ({ designParams, setDesignParams, onOpenBatchModal }) => 
           )}
         </div>
       </div>
+
+      {/* 保存为模板弹窗 */}
+      {showSaveTemplateModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setShowSaveTemplateModal(false)}
+          />
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative w-full max-w-md bg-white rounded-xl shadow-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">保存为模板</h3>
+                <button
+                  onClick={() => setShowSaveTemplateModal(false)}
+                  className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    模板名称
+                  </label>
+                  <input
+                    type="text"
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                    placeholder="请输入模板名称"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                  <div className="text-xs text-gray-500">当前参数：</div>
+                  <div className="text-sm text-gray-700">
+                    <span className="font-medium">底模：</span>{selectedBaseModel?.label || '默认'}
+                  </div>
+                  <div className="text-sm text-gray-700">
+                    <span className="font-medium">行业：</span>{selectedIndustry?.label || '未选择'}
+                  </div>
+                  <div className="text-sm text-gray-700">
+                    <span className="font-medium">风格：</span>{selectedStyle?.label || '未选择'}
+                  </div>
+                  <div className="text-sm text-gray-700">
+                    <span className="font-medium">比例：</span>{selectedAspectRatio}
+                  </div>
+                  <div className="text-sm text-gray-700">
+                    <span className="font-medium">提示词：</span>{prompt || '无'}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    onClick={() => setShowSaveTemplateModal(false)}
+                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={handleSaveAsTemplate}
+                    disabled={!templateName.trim()}
+                    className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    保存
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

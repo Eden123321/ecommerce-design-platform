@@ -20,7 +20,7 @@ const mockProjects = [
     createdAt: '2024-01-15',
     updatedAt: '2024-01-15',
     cover: '/images/ecommerce/3066480e150e254b7a072774d1092117.jpg',
-    params: { model: 'SDXL', industry: '电商', ratio: '16:9' },
+    params: { model: 'SDXL', industry: '电商', ratio: '16:9', template: 'promotion', style: 'modern' },
   },
   {
     id: 2,
@@ -30,7 +30,7 @@ const mockProjects = [
     createdAt: '2024-01-14',
     updatedAt: '2024-01-15',
     cover: '/images/social/3be78ddf4124b4cc21830f0dce67e43c.jpg',
-    params: { model: 'Flux2-Kein', industry: '服装', ratio: '16:9' },
+    params: { model: 'Flux2-Kein', industry: '服装', ratio: '16:9', template: 'banner', style: 'playful' },
   },
   {
     id: 3,
@@ -40,7 +40,7 @@ const mockProjects = [
     createdAt: '2024-01-13',
     updatedAt: '2024-01-14',
     cover: '/images/ecommerce/76081772fe50d4400079f7f47388b176.jpg',
-    params: { model: 'Flux2-Kein', industry: '电商', ratio: '16:9' },
+    params: { model: 'Flux2-Kein', industry: '电商', ratio: '16:9', template: 'default', style: 'modern' },
   },
   {
     id: 4,
@@ -50,7 +50,7 @@ const mockProjects = [
     createdAt: '2024-01-12',
     updatedAt: '2024-01-12',
     cover: '/images/poster/8859307a6287009a268a049808f11a3f.jpg',
-    params: { model: 'SDXL', industry: '电商', ratio: '9:16' },
+    params: { model: 'SDXL', industry: '电商', ratio: '9:16', template: 'poster', style: 'luxury' },
   },
   {
     id: 5,
@@ -60,7 +60,7 @@ const mockProjects = [
     createdAt: '2024-01-11',
     updatedAt: '2024-01-15',
     cover: '/images/ecommerce/d41a1973c80326b230266d549687436a.jpg',
-    params: { model: 'Flux2-Kein', industry: '家居', ratio: '1:1' },
+    params: { model: 'Flux2-Kein', industry: '家居', ratio: '1:1', template: 'product', style: 'minimal' },
   },
   {
     id: 6,
@@ -70,7 +70,7 @@ const mockProjects = [
     createdAt: '2024-01-10',
     updatedAt: '2024-01-12',
     cover: '/images/ecommerce/42e945e92bc9df8ba1a2fbc1cf66514a.jpg',
-    params: { model: 'SDXL', industry: '电商', ratio: '1:1' },
+    params: { model: 'SDXL', industry: '电商', ratio: '1:1', template: 'default', style: 'flat' },
   },
 ];
 
@@ -210,7 +210,7 @@ const CreateProjectForm = ({ onSubmit, onCancel }) => {
   );
 };
 
-const Projects = () => {
+const Projects = ({ onNavigate, setDesignParams }) => {
   const [projects] = useState(mockProjects);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -331,7 +331,53 @@ const Projects = () => {
               onEdit={() => console.log('Edit:', project.id)}
               onDelete={() => console.log('Delete:', project.id)}
               onDuplicate={() => console.log('Duplicate:', project.id)}
-              onView={(p) => console.log('View:', p.id)}
+              onView={(project) => {
+                // 转换项目参数为设计参数格式
+                if (setDesignParams && project.params) {
+                  const industryOptions = [
+                    { id: 'ecommerce', label: '电商' },
+                    { id: 'beauty', label: '美妆' },
+                    { id: 'fashion', label: '服装' },
+                    { id: 'food', label: '食品' },
+                    { id: 'digital', label: '数码' },
+                    { id: 'home', label: '家居' },
+                  ];
+                  const modelOptions = [
+                    { id: 'sdxl', label: 'SDXL' },
+                    { id: 'flux2-kein', label: 'Flux2-Kein' },
+                    { id: 'flux', label: 'Flux' },
+                    { id: 'qwen2509', label: 'Qwen2.5' },
+                  ];
+                  const templateOptions = [
+                    { id: 'default', label: '默认模板' },
+                    { id: 'promotion', label: '促销模板' },
+                    { id: 'product', label: '商品展示' },
+                    { id: 'poster', label: '海报模板' },
+                    { id: 'banner', label: 'Banner模板' },
+                    { id: 'social', label: '社交媒体' },
+                  ];
+                  const styleOptions = [
+                    { id: 'flat', label: '扁平风格' },
+                    { id: 'minimal', label: '极简风格' },
+                    { id: 'modern', label: '现代风格' },
+                    { id: 'retro', label: '复古风格' },
+                    { id: 'luxury', label: '轻奢风格' },
+                    { id: 'playful', label: '活泼风格' },
+                  ];
+                  const industry = industryOptions.find(i => i.label === project.params.industry) || null;
+                  const model = modelOptions.find(m => m.label === project.params.model) || null;
+                  const template = templateOptions.find(t => t.id === project.params.template) || null;
+                  const style = styleOptions.find(s => s.id === project.params.style) || null;
+                  setDesignParams({
+                    industry,
+                    style: style,
+                    ratio: project.params.ratio || '1:1',
+                    baseModel: model,
+                    template: template,
+                  });
+                }
+                onNavigate?.('design-platform');
+              }}
               onGenerate={(p) => console.log('Generate:', p.id)}
             />
           ))}

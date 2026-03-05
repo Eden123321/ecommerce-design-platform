@@ -5,7 +5,7 @@ import {
   Sparkles,
   ArrowRight,
   TrendingUp,
-  Clock,
+  Layers,
   Heart,
   Search,
   Download,
@@ -163,7 +163,7 @@ const Home = ({ onNavigate }) => {
     { key: 'design', label: 'AI 设计', icon: Sparkles, page: 'design-platform' },
     { key: 'projects', label: '我的项目', icon: FolderKanban, page: 'projects' },
     { key: 'templates', label: '模板库', icon: Layout, page: 'templates' },
-    { key: 'datasets', label: '测评集', icon: Clock, page: 'datasets' },
+    { key: 'batch', label: '批量任务', icon: Layers, page: 'batch-production' },
   ];
 
   return (
