@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Home,
   FolderKanban,
@@ -7,7 +7,11 @@ import {
   Cpu,
   Palette,
   Sparkles,
-  User
+  User,
+  HelpCircle,
+  Languages,
+  LogOut,
+  ChevronDown
 } from 'lucide-react';
 
 const menuGroups = [
@@ -35,6 +39,26 @@ const menuGroups = [
 ];
 
 const Sidebar = ({ activePage, onNavigate }) => {
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
+
+  // 点击外部关闭菜单
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const menuItems = [
+    { icon: HelpCircle, label: '帮助中心', action: () => console.log('帮助中心') },
+    { icon: Languages, label: '语言切换', action: () => console.log('语言切换') },
+    { icon: LogOut, label: '退出登录', action: () => console.log('退出登录'), danger: true },
+  ];
+
   return (
     <aside className="w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
       {/* Logo */}
@@ -95,6 +119,45 @@ const Sidebar = ({ activePage, onNavigate }) => {
           </button>
         </div>
       </nav>
+
+      {/* 用户信息区域 */}
+      <div className="p-3 border-t border-gray-100" ref={menuRef}>
+        <div className="relative">
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+              <span className="text-sm font-medium text-primary-600">张</span>
+            </div>
+            <div className="flex-1 text-left min-w-0">
+              <div className="text-sm font-medium text-gray-900 truncate">张三</div>
+              <div className="text-xs text-gray-500">个人版</div>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showMenu ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* 弹出菜单 */}
+          {showMenu && (
+            <div className="absolute bottom-full left-3 right-3 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 py-1 animate-fade-in-up">
+              {menuItems.map((item, index) => (
+                <button
+                  key={index}
+                  onClick={() => { item.action(); setShowMenu(false); }}
+                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors cursor-pointer ${
+                    item.danger
+                      ? 'text-red-600 hover:bg-red-50'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <item.icon className="w-4 h-4" />
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </aside>
   );
 };

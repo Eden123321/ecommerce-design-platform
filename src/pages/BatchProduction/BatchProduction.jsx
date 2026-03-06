@@ -388,9 +388,7 @@ const BatchProduction = ({ onNavigate, tasks = [] }) => {
   const renderTaskList = () => (
     <div className="space-y-3 animate-fade-in-up">
       {tasks.map((task) => (
-        <div key={task.id} className="animate-fade-in-up" style={{ animationDelay: `${task.id * 0.05}s` }}>
-          <TaskCard task={task} onClick={() => setSelectedTask(task)} />
-        </div>
+        <TaskCard key={task.id} task={task} onClick={() => setSelectedTask(task)} />
       ))}
       {tasks.length === 0 && (
         <Card className="py-12">
